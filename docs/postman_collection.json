@@ -1,0 +1,55 @@
+{
+  "info": {
+    "name": "CDY2204 Formativa Cloud Native",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "Agregar curso",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/cursos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Spring Boot Cloud Native\",\n  \"instructor\": \"Docente CDY2204\",\n  \"duracion\": \"24 horas\",\n  \"costo\": 120000\n}"
+        }
+      }
+    },
+    {
+      "name": "Listar cursos",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/cursos"
+      }
+    },
+    {
+      "name": "Crear inscripcion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/inscripciones",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estudianteNombre\": \"Maria Perez\",\n  \"estudianteEmail\": \"maria.perez@duocuc.cl\",\n  \"cursoIds\": [1]\n}"
+        }
+      }
+    }
+  ]
+}
