@@ -1,87 +1,67 @@
-name: CI/CD Spring Boot Docker EC2
-
+name: Build and Push Docker Image
+ 
 on:
   push:
     branches:
       - main
-
-env:
-  IMAGE_NAME: formativa-cloud-native
-
-jobs:
-  build-push-deploy:
-    runs-on: ubuntu-latest
-
+  pull_request:
+    branches:
+      - main
+  
+  workflow_dispatch:
+      
+jobs: 
+  build:
+    runs-on: ubuntu-latest 
     steps:
-      - name: Descargar codigo
-        uses: actions/checkout@v4
 
-      - name: Configurar Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
+      # Paso 1: Checkout del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Ejecutar pruebas y empaquetar
-        run: mvn clean package
-
-      - name: Configurar credenciales AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-
-      - name: Iniciar sesion en Docker Hub
-        uses: docker/login-action@v3
+      # Paso 2: Autenticar en DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2 
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Configurar Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # Paso 3: Construir la imagen de Docker
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest .
 
-      - name: Construir y publicar imagen Docker
-        uses: docker/build-push-action@v6
+      # Paso 4: Hacer push de la imagen a DockerHub
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
+          
+     # Paso 5: Configurar credenciales de AWS para SSH, incluyendo AWS_SESSION_TOKEN
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          context: .
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Preparar llave SSH
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1  # Cambia a tu región
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+    # Paso 5.5: 
+      - name: Add SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key.pem
-          chmod 600 ~/.ssh/ec2_key.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-      - name: Desplegar imagen en EC2
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          USER_SERVER: ${{ secrets.USER_SERVER }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          ORACLE_DB_URL: ${{ secrets.ORACLE_DB_URL }}
-          ORACLE_DB_USERNAME: ${{ secrets.ORACLE_DB_USERNAME }}
-          ORACLE_DB_PASSWORD: ${{ secrets.ORACLE_DB_PASSWORD }}
+
+      # Paso 6: Conectarse a EC2 y desplegar el contenedor
+      - name: SSH commands to deploy
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem "$USER_SERVER@$EC2_HOST" << EOF
-            set -e
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker pull "$DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
-            docker stop "$IMAGE_NAME" || true
-            docker rm "$IMAGE_NAME" || true
-            docker run -d \
-              --name "$IMAGE_NAME" \
-              --restart unless-stopped \
-              -p 8080:8080 \
-              -e ORACLE_DB_URL="${ORACLE_DB_URL:-jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=/app/wallet}" \
-              -e ORACLE_DB_USERNAME="${ORACLE_DB_USERNAME:-ADMIN}" \
-              -e ORACLE_DB_PASSWORD="$ORACLE_DB_PASSWORD" \
-              "$DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
-            docker ps
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.USER_SERVER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            # Autenticar en DockerHub desde EC2
+            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+            # Descargar la última versión de la imagen
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
+            # Parar y eliminar cualquier contenedor previo
+            docker stop my-app || true && docker rm my-app || true
+            # Iniciar el contenedor
+            docker run -d --name my-app -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
           EOF
