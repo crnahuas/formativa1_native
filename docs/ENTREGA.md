@@ -118,7 +118,7 @@ Incluye las dependencias obligatorias para la pauta:
 
 Archivo: `.github/workflows/main.yml`.
 
-El pipeline se activa solo con push a `main`, compila con Maven, crea imagen Docker `linux/amd64`, publica en Docker Hub y despliega en EC2 por SSH.
+El workflow se llama `Build and Push Docker Image`. Se activa con push a `main`, pull request a `main` y ejecucion manual con `workflow_dispatch`. En pull request solo valida build; en push a `main` compila con Maven, crea imagen Docker `linux/amd64`, publica en Docker Hub y despliega en EC2 por SSH.
 
 ## 9. Secrets GitHub
 
@@ -189,8 +189,8 @@ Prueba manual:
 
 ```bash
 docker login
-docker build --platform linux/amd64 -t USUARIO_DOCKERHUB/formativa-cloud-native:latest .
-docker push USUARIO_DOCKERHUB/formativa-cloud-native:latest
+docker build --platform linux/amd64 -t USUARIO_DOCKERHUB/my-app:latest .
+docker push USUARIO_DOCKERHUB/my-app:latest
 ```
 
 ## 12. Pasos exactos AWS EC2
@@ -424,7 +424,7 @@ Curso inexistente en inscripcion:
 
 ## 19. Explicacion del pipeline
 
-El pipeline cumple el requerimiento de despliegue automatico porque se ejecuta con `push` a `main`. La etapa Maven valida que el proyecto compile y ejecuta pruebas automaticas de creacion de cursos, calculo total de inscripcion y error por curso inexistente. La etapa Docker genera una imagen reproducible. La etapa Docker Hub publica la imagen para que EC2 pueda descargarla. La etapa SSH actualiza el contenedor en AWS EC2 sin intervencion manual.
+El pipeline cumple el requerimiento de despliegue automatico porque se ejecuta con `push` a `main`. La etapa Maven valida que el proyecto compile y ejecuta pruebas automaticas de creacion de cursos, calculo total de inscripcion y error por curso inexistente. La etapa Docker genera una imagen reproducible llamada `my-app`. La etapa Docker Hub publica la imagen para que EC2 pueda descargarla. La etapa SSH actualiza el contenedor `my-app` en AWS EC2 sin intervencion manual.
 
 ## 20. Evidencias recomendadas para grabar
 
@@ -523,7 +523,7 @@ Solucion: verificar que el contenedor este activo y que Security Group permita p
 
 ```bash
 docker ps
-docker logs formativa-cloud-native
+docker logs my-app
 ```
 
 Error: GitHub Actions no conecta por SSH.
