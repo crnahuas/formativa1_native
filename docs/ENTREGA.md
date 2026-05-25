@@ -446,44 +446,7 @@ El pipeline cumple el requerimiento de despliegue automatico porque se ejecuta c
 
 Despues, Docker genera una imagen reproducible llamada `my-app`. Esta imagen se publica en Docker Hub para que EC2 pueda descargarla. Finalmente, la etapa SSH actualiza el contenedor en AWS EC2 sin intervencion manual. Antes de iniciar el nuevo contenedor, el workflow libera el puerto `8080` para evitar errores de despliegue cuando queda una ejecucion anterior activa.
 
-## 20. Evidencias recomendadas para grabar
-
-Mostrar en Teams:
-
-1. Repositorio GitHub con codigo.
-2. Archivo `.github/workflows/main.yml`.
-3. Secrets configurados, ocultando valores.
-4. Ejecucion exitosa de GitHub Actions.
-5. Imagen publicada en Docker Hub.
-6. Instancia EC2 activa.
-7. Security Group con puerto `8080`.
-8. Contenedor corriendo en EC2 con `docker ps`.
-9. Postman creando curso.
-10. Postman listando cursos.
-11. Postman creando inscripcion y mostrando total.
-12. Evidencia en Oracle Cloud de tablas con datos.
-
-## 21. Guion tecnico para presentacion Teams
-
-1. Presentar objetivo: microservicio para cursos e inscripciones de plataforma educativa.
-2. Explicar arquitectura: Spring Boot, Oracle Cloud, Docker, GitHub Actions, Docker Hub y EC2.
-3. Mostrar estructura del proyecto.
-4. Mostrar entidades `Curso` e `Inscripcion`.
-5. Mostrar endpoints en controladores.
-6. Mostrar `application.properties` con variables de entorno.
-7. Mostrar `Dockerfile`.
-8. Mostrar workflow CI/CD.
-9. Ejecutar o mostrar Action exitoso.
-10. Abrir Docker Hub y confirmar imagen.
-11. Abrir EC2 y confirmar instancia.
-12. Probar `POST /cursos` en Postman.
-13. Probar `GET /cursos` en Postman.
-14. Probar `POST /inscripciones` en Postman.
-15. Explicar que el total se calcula sumando los costos de los cursos seleccionados.
-16. Mostrar persistencia en Oracle Cloud.
-17. Cerrar con checklist de cumplimiento.
-
-## 22. Estructura de documentacion final
+## 20. Estructura de documentacion final
 
 Entregar:
 
@@ -497,7 +460,7 @@ zip-o-rar-documentacion/
 └── link-video-teams.txt
 ```
 
-## 23. Checklist tecnico
+## 21. Checklist tecnico
 
 | Criterio | Cumplimiento |
 | --- | --- |
@@ -510,7 +473,7 @@ zip-o-rar-documentacion/
 | Video explicativo | Guion y evidencias definidos para Teams. |
 | Manejo de errores | Validaciones 400 y curso inexistente 404. |
 
-## 24. Rol de cada componente
+## 22. Rol de cada componente
 
 - Java/Spring Boot/Maven: implementan el microservicio REST.
 - Oracle Cloud: almacena cursos e inscripciones.
@@ -520,7 +483,7 @@ zip-o-rar-documentacion/
 - AWS EC2: ejecuta el contenedor publicado.
 - Postman: demuestra las tres funcionalidades principales.
 
-## 25. Errores comunes y solucion
+## 23. Errores comunes y solucion
 
 Error: no encuentra el wallet de Oracle
 
