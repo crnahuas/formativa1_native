@@ -30,6 +30,7 @@ public class AwsServiceImpl implements AwsService {
 
     @Override
     public S3Response uploadResumen(Long numeroResumen, MultipartFile file) {
+        validarConfiguracionBucket();
         byte[] content = obtenerContenidoResumen(numeroResumen, file);
         String key = keyResumen(numeroResumen);
         s3Repository.upload(key, content, obtenerContentType(file));
@@ -38,6 +39,7 @@ public class AwsServiceImpl implements AwsService {
 
     @Override
     public S3Response updateResumen(Long numeroResumen, MultipartFile file) {
+        validarConfiguracionBucket();
         String key = keyResumen(numeroResumen);
         validarExistencia(key, numeroResumen);
         byte[] content = obtenerContenidoResumen(numeroResumen, file);
@@ -47,6 +49,7 @@ public class AwsServiceImpl implements AwsService {
 
     @Override
     public byte[] downloadResumen(Long numeroResumen) {
+        validarConfiguracionBucket();
         String key = keyResumen(numeroResumen);
         validarExistencia(key, numeroResumen);
         return s3Repository.download(key);
@@ -54,6 +57,7 @@ public class AwsServiceImpl implements AwsService {
 
     @Override
     public S3Response deleteResumen(Long numeroResumen) {
+        validarConfiguracionBucket();
         String key = keyResumen(numeroResumen);
         validarExistencia(key, numeroResumen);
         s3Repository.delete(key);
@@ -69,6 +73,12 @@ public class AwsServiceImpl implements AwsService {
             return file.getBytes();
         } catch (IOException exception) {
             throw new ArchivoStorageException("No fue posible leer el archivo recibido", exception);
+        }
+    }
+
+    private void validarConfiguracionBucket() {
+        if (bucketName == null || bucketName.isBlank()) {
+            throw new ArchivoStorageException("AWS_S3_BUCKET_NAME no esta configurado");
         }
     }
 

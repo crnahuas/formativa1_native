@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -40,6 +42,37 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ArchivoStorageException.class)
     public ResponseEntity<ErrorResponse> handleStorage(ArchivoStorageException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, "Error de archivo", List.of(exception.getMessage()));
+    }
+
+    @ExceptionHandler(S3Exception.class)
+    public ResponseEntity<ErrorResponse> handleS3(S3Exception exception) {
+        HttpStatus status = HttpStatus.BAD_GATEWAY;
+        if (exception.statusCode() == 403) {
+            status = HttpStatus.FORBIDDEN;
+        } else if (exception.statusCode() == 404) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (exception.statusCode() == 400) {
+            status = HttpStatus.BAD_REQUEST;
+        }
+
+        String awsMessage = exception.awsErrorDetails() == null
+                ? exception.getMessage()
+                : exception.awsErrorDetails().errorMessage();
+
+        return buildResponse(
+                status,
+                "Error AWS S3",
+                List.of("AWS S3 respondio " + exception.statusCode() + ": " + awsMessage)
+        );
+    }
+
+    @ExceptionHandler(SdkClientException.class)
+    public ResponseEntity<ErrorResponse> handleAwsClient(SdkClientException exception) {
+        return buildResponse(
+                HttpStatus.BAD_GATEWAY,
+                "Error conexion AWS",
+                List.of(exception.getMessage())
+        );
     }
 
     @ExceptionHandler(Exception.class)
