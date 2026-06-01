@@ -95,6 +95,11 @@ jobs:
           ORACLE_DB_URL: ${{ secrets.ORACLE_DB_URL }}
           ORACLE_DB_USERNAME: ${{ secrets.ORACLE_DB_USERNAME }}
           ORACLE_DB_PASSWORD: ${{ secrets.ORACLE_DB_PASSWORD }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$USER_SERVER@$EC2_HOST" << EOF
             set -e
@@ -117,6 +122,11 @@ jobs:
               -e ORACLE_DB_URL="${ORACLE_DB_URL:-jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=/app/wallet}" \
               -e ORACLE_DB_USERNAME="${ORACLE_DB_USERNAME:-ADMIN}" \
               -e ORACLE_DB_PASSWORD="$ORACLE_DB_PASSWORD" \
+              -e AWS_REGION="$AWS_REGION" \
+              -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+              -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+              -e AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
+              -e AWS_S3_BUCKET_NAME="$AWS_S3_BUCKET_NAME" \
               "$DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
             docker ps
           EOF

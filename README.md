@@ -11,6 +11,11 @@ La aplicacion no incluye frontend ni autenticacion. El foco del trabajo esta en 
 | GET | `/cursos` | Consulta cursos disponibles con nombre, instructor, duracion y costo. |
 | POST | `/cursos` | Agrega un nuevo curso y lo persiste en Oracle Cloud. |
 | POST | `/inscripciones` | Inscribe un estudiante en uno o mas cursos, calcula el total y persiste la inscripcion en Oracle Cloud. |
+| GET | `/inscripciones/{numeroResumen}/resumen` | Genera y descarga el archivo fisico `resumen.txt` de una inscripcion. |
+| POST | `/s3/uploadResumen?numeroResumen=1` | Sube el resumen a AWS S3 en la carpeta `numeroResumen/`. |
+| PUT | `/s3/updateResumen?numeroResumen=1` | Reemplaza un resumen existente en AWS S3. |
+| GET | `/s3/downloadResumen?numeroResumen=1` | Descarga el resumen almacenado en AWS S3. |
+| DELETE | `/s3/deleteResumen?numeroResumen=1` | Elimina el resumen almacenado en AWS S3. |
 
 El flujo de uso esperado es crear uno o mas cursos, revisar la lista disponible y luego generar una inscripcion utilizando los IDs de los cursos existentes.
 
@@ -45,6 +50,30 @@ export ORACLE_WALLET_PATH='./wallet'
 export ORACLE_DB_URL='jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=./wallet'
 export ORACLE_DB_USERNAME='ADMIN'
 export ORACLE_DB_PASSWORD='TU_PASSWORD_ORACLE'
+
+export AWS_REGION='us-east-1'
+export AWS_ACCESS_KEY_ID='TU_ACCESS_KEY_AWS_ACADEMY'
+export AWS_SECRET_ACCESS_KEY='TU_SECRET_KEY_AWS_ACADEMY'
+export AWS_SESSION_TOKEN='TU_SESSION_TOKEN_AWS_ACADEMY'
+export AWS_S3_BUCKET_NAME='TU_BUCKET_S3'
+```
+
+Si las credenciales AWS ya estan guardadas como GitHub Secrets, el bucket se puede crear desde GitHub Actions:
+
+1. Ir al repositorio en GitHub.
+2. Entrar a `Actions`.
+3. Ejecutar manualmente `Create AWS S3 Bucket`.
+4. Usar el nombre `bucket-formativa-duoc`.
+5. Agregar el secreto `AWS_S3_BUCKET_NAME` con el nombre del bucket creado.
+
+Para el despliegue automatico tambien deben existir estos secrets:
+
+```text
+AWS_REGION
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_SESSION_TOKEN
+AWS_S3_BUCKET_NAME
 ```
 
 Compilar y ejecutar pruebas:
@@ -90,6 +119,34 @@ curl --location 'http://localhost:8080/inscripciones' \
     "estudianteEmail": "maria.perez@duocuc.cl",
     "cursoIds": [1]
   }'
+```
+
+Generar y descargar el resumen fisico:
+
+```bash
+curl --location 'http://localhost:8080/inscripciones/1/resumen' \
+  --output resumen.txt
+```
+
+Subir el resumen generado a S3. El objeto queda en la clave `1/resumen.txt`:
+
+```bash
+curl --request POST 'http://localhost:8080/s3/uploadResumen?numeroResumen=1'
+```
+
+Actualizar, descargar y eliminar el resumen en S3:
+
+```bash
+curl --request PUT 'http://localhost:8080/s3/updateResumen?numeroResumen=1'
+curl --location 'http://localhost:8080/s3/downloadResumen?numeroResumen=1' --output resumen-s3.txt
+curl --request DELETE 'http://localhost:8080/s3/deleteResumen?numeroResumen=1'
+```
+
+Si se quiere subir o reemplazar un archivo editado manualmente desde el computador, usar `multipart/form-data` con el campo `file`:
+
+```bash
+curl --request PUT 'http://localhost:8080/s3/updateResumen?numeroResumen=1' \
+  --form 'file=@resumen.txt'
 ```
 
 ## Docker local

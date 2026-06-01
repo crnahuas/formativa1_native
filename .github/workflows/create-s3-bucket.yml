@@ -1,0 +1,83 @@
+name: Create AWS S3 Bucket
+
+on:
+  workflow_dispatch:
+    inputs:
+      bucket_name:
+        description: Nombre unico global del bucket S3
+        required: true
+        default: bucket-formativa-duoc
+      aws_region:
+        description: Region AWS del Learner Lab
+        required: true
+        default: us-east-1
+
+jobs:
+  create-bucket:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Create bucket if needed
+        env:
+          BUCKET_NAME: ${{ inputs.bucket_name }}
+          AWS_REGION: ${{ inputs.aws_region }}
+        run: |
+          set -euo pipefail
+
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Bucket already exists: $BUCKET_NAME"
+          elif [ "$AWS_REGION" = "us-east-1" ]; then
+            aws s3api create-bucket --bucket "$BUCKET_NAME"
+          else
+            aws s3api create-bucket \
+              --bucket "$BUCKET_NAME" \
+              --create-bucket-configuration LocationConstraint="$AWS_REGION"
+          fi
+
+      - name: Configure public access for academic demo
+        env:
+          BUCKET_NAME: ${{ inputs.bucket_name }}
+        run: |
+          set -euo pipefail
+
+          aws s3api put-public-access-block \
+            --bucket "$BUCKET_NAME" \
+            --public-access-block-configuration \
+            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+
+          cat > bucket-policy.json << EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicReadForAcademicDemo",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::$BUCKET_NAME/*"
+              }
+            ]
+          }
+          EOF
+
+          aws s3api put-bucket-policy \
+            --bucket "$BUCKET_NAME" \
+            --policy file://bucket-policy.json
+
+      - name: Show result
+        env:
+          BUCKET_NAME: ${{ inputs.bucket_name }}
+          AWS_REGION: ${{ inputs.aws_region }}
+        run: |
+          echo "Bucket listo: $BUCKET_NAME"
+          echo "Region: $AWS_REGION"
+          echo "Agrega o actualiza este secreto del repositorio para el despliegue:"
+          echo "AWS_S3_BUCKET_NAME=$BUCKET_NAME"

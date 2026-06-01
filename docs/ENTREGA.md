@@ -11,11 +11,17 @@ La solucion corresponde a un microservicio REST desarrollado con Spring Boot. El
 - `GET /cursos`: consulta cursos disponibles.
 - `POST /cursos`: agrega cursos y los persiste en Oracle Cloud.
 - `POST /inscripciones`: inscribe estudiantes en uno o mas cursos, genera resumen, calcula total y persiste en Oracle Cloud.
+- `GET /inscripciones/{numeroResumen}/resumen`: genera un archivo fisico `resumen.txt` y lo descarga.
+- `POST /s3/uploadResumen?numeroResumen=1`: sube el resumen a AWS S3.
+- `PUT /s3/updateResumen?numeroResumen=1`: reemplaza un resumen existente en AWS S3.
+- `GET /s3/downloadResumen?numeroResumen=1`: descarga el resumen desde AWS S3.
+- `DELETE /s3/deleteResumen?numeroResumen=1`: elimina el resumen desde AWS S3.
 
 El flujo cloud implementado es el siguiente:
 
 ```text
 Postman -> AWS EC2:8080 -> Contenedor Docker -> Spring Boot -> Oracle Cloud Database
+Postman -> AWS EC2:8080 -> Contenedor Docker -> Spring Boot -> AWS S3 Bucket
 GitHub main -> GitHub Actions -> Docker Hub -> AWS EC2 -> Contenedor actualizado
 ```
 
@@ -60,6 +66,8 @@ El codigo se separo en capas para mantener responsabilidades claras:
 - Entidades: representan las tablas `CURSOS`, `INSCRIPCIONES` e `INSCRIPCION_CURSOS`.
 - Repositorios: encapsulan el acceso a datos con Spring Data JPA.
 - Servicios: contienen la logica de negocio, como crear cursos y calcular el total de una inscripcion.
+- Servicio de resumen: genera el archivo fisico `resumen.txt` dentro de `resumenes/{numeroResumen}/`.
+- Integracion S3: `StorageConfig`, `S3Repository`, `AwsService` y `AwsController` gestionan subida, reemplazo, descarga y eliminacion.
 - Controladores: exponen los endpoints REST requeridos.
 - DTOs: separan los datos recibidos y respondidos por la API.
 - Manejo de errores: entrega respuestas controladas para validaciones y recursos inexistentes.
@@ -84,6 +92,14 @@ spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.format_sql=true
 spring.jpa.database-platform=org.hibernate.dialect.OracleDialect
+
+app.resumenes.path=${APP_RESUMENES_PATH:./resumenes}
+
+aws.region=${AWS_REGION:us-east-1}
+aws.access-key=${AWS_ACCESS_KEY_ID:}
+aws.secret-key=${AWS_SECRET_ACCESS_KEY:}
+aws.session-token=${AWS_SESSION_TOKEN:}
+aws.s3.bucket-name=${AWS_S3_BUCKET_NAME:}
 ```
 
 El valor `ORACLE_WALLET_PATH` permite que la misma aplicacion funcione localmente y dentro del contenedor. En EC2 el wallet queda en `/app/wallet`.
@@ -117,6 +133,7 @@ Incluye las dependencias necesarias para el microservicio:
 - `spring-boot-starter-web`
 - `spring-boot-starter-data-jpa`
 - `spring-boot-starter-validation`
+- `software.amazon.awssdk:s3`
 - `ojdbc11`
 - `oraclepki`
 - `osdt_core`
@@ -157,6 +174,11 @@ Secrets tecnicos necesarios para que el contenedor se conecte a Oracle Cloud:
 ORACLE_DB_URL
 ORACLE_DB_USERNAME
 ORACLE_DB_PASSWORD
+AWS_REGION
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_SESSION_TOKEN
+AWS_S3_BUCKET_NAME
 ```
 
 Para esta entrega, `ORACLE_DB_USERNAME` corresponde a `ADMIN`. La password debe guardarse solo como secret y no escribirse en archivos del repositorio.
@@ -166,6 +188,43 @@ Ejemplo de `ORACLE_DB_URL`:
 ```text
 jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=/app/wallet
 ```
+
+## 10.1 Pasos exactos AWS S3
+
+1. Ingresar a AWS Academy y activar el Learner Lab.
+2. Entrar a AWS Details y copiar `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y `AWS_SESSION_TOKEN`.
+3. Abrir Amazon S3 y crear un bucket en la region definida para el laboratorio, por ejemplo `us-east-1`.
+4. Deshabilitar el bloqueo de acceso publico segun la guia de la semana, si el docente lo solicita.
+5. Configurar las variables de entorno:
+
+```bash
+export AWS_REGION='us-east-1'
+export AWS_ACCESS_KEY_ID='valor_aws_academy'
+export AWS_SECRET_ACCESS_KEY='valor_aws_academy'
+export AWS_SESSION_TOKEN='valor_aws_academy'
+export AWS_S3_BUCKET_NAME='bucket-formativa-duoc'
+```
+
+Alternativa con GitHub Actions:
+
+1. Confirmar que existen los secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y `AWS_SESSION_TOKEN`.
+2. Ejecutar manualmente el workflow `Create AWS S3 Bucket`.
+3. Ingresar el nombre del bucket y region.
+4. Una vez creado, agregar el secret `AWS_S3_BUCKET_NAME` con el nombre usado.
+5. El workflow principal inyecta las variables AWS al contenedor durante el despliegue.
+
+La organizacion obligatoria del bucket queda asi:
+
+```text
+1/
+  resumen.txt
+2/
+  resumen.txt
+1001/
+  resumen.txt
+```
+
+La carpeta siempre corresponde al `numeroResumen`, que en esta solucion es el ID de la inscripcion.
 
 ## 10. Pasos exactos Oracle Cloud
 

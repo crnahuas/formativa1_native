@@ -50,6 +50,41 @@
           "raw": "{\n  \"estudianteNombre\": \"Maria Perez\",\n  \"estudianteEmail\": \"maria.perez@duocuc.cl\",\n  \"cursoIds\": [1]\n}"
         }
       }
+    },
+    {
+      "name": "Descargar resumen local",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/inscripciones/1/resumen"
+      }
+    },
+    {
+      "name": "S3 - Subir resumen generado",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/s3/uploadResumen?numeroResumen=1"
+      }
+    },
+    {
+      "name": "S3 - Actualizar resumen generado",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/s3/updateResumen?numeroResumen=1"
+      }
+    },
+    {
+      "name": "S3 - Descargar resumen",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/s3/downloadResumen?numeroResumen=1"
+      }
+    },
+    {
+      "name": "S3 - Eliminar resumen",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/s3/deleteResumen?numeroResumen=1"
+      }
     }
   ]
 }

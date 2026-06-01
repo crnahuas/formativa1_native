@@ -37,6 +37,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, "Recurso no encontrado", List.of(exception.getMessage()));
     }
 
+    @ExceptionHandler(ArchivoStorageException.class)
+    public ResponseEntity<ErrorResponse> handleStorage(ArchivoStorageException exception) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Error de archivo", List.of(exception.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception exception) {
         return buildResponse(
