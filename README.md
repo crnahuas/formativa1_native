@@ -178,3 +178,11 @@ La guia completa de arquitectura, configuracion cloud, pipeline, pruebas Postman
 La guia puntual para capturar evidencias en Postman esta en:
 
 [docs/EVIDENCIAS_POSTMAN.md](docs/EVIDENCIAS_POSTMAN.md)
+
+El guion sugerido para grabar el video de entrega esta en:
+
+[docs/GUION_VIDEO.md](docs/GUION_VIDEO.md)
+
+Version HTML del guion:
+
+[docs/guion_video.html](docs/guion_video.html)
