@@ -179,6 +179,34 @@ La guia puntual para capturar evidencias en Postman esta en:
 
 [docs/EVIDENCIAS_POSTMAN.md](docs/EVIDENCIAS_POSTMAN.md)
 
+La documentacion de Semana 4 para configurar Azure AD B2C, AWS API Gateway, autorizador JWT y pruebas por Postman esta en:
+
+[docs/SEMANA4_IDAAS_API_MANAGER.md](docs/SEMANA4_IDAAS_API_MANAGER.md)
+
+Version Word para adjuntar en la entrega:
+
+[docs/SEMANA4_IDAAS_API_MANAGER.docx](docs/SEMANA4_IDAAS_API_MANAGER.docx)
+
+Comprimido de documentacion para adjuntar:
+
+[docs/semana4_documentacion_idaas_api_manager.zip](docs/semana4_documentacion_idaas_api_manager.zip)
+
+Coleccion Postman especifica para probar los endpoints publicados en API Gateway:
+
+[docs/postman_api_gateway_semana4_collection.json](docs/postman_api_gateway_semana4_collection.json)
+
+Checklist de evidencias finales para Word y video:
+
+[docs/EVIDENCIAS_SEMANA4_CHECKLIST.md](docs/EVIDENCIAS_SEMANA4_CHECKLIST.md)
+
+Version Word del checklist de evidencias:
+
+[docs/EVIDENCIAS_SEMANA4_CHECKLIST.docx](docs/EVIDENCIAS_SEMANA4_CHECKLIST.docx)
+
+Informe Word final con evidencias integradas:
+
+[docs/Informe_Formativa_Semana4_IDaaS_API_Manager.docx](docs/Informe_Formativa_Semana4_IDaaS_API_Manager.docx)
+
 El guion sugerido para grabar el video de entrega esta en:
 
 [docs/GUION_VIDEO.md](docs/GUION_VIDEO.md)

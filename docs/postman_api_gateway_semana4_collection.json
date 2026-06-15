@@ -1,0 +1,277 @@
+{
+  "info": {
+    "name": "CDY2204 Semana 4 - API Gateway IDaaS",
+    "description": "Coleccion para evidenciar los endpoints reales de Spring Boot inscritos en AWS API Gateway y protegidos con JWT de Azure AD B2C.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "apiGatewayUrl",
+      "value": "https://f3k22g500d.execute-api.us-east-1.amazonaws.com"
+    },
+    {
+      "key": "ec2BackendUrl",
+      "value": "http://107.23.174.145:8080"
+    },
+    {
+      "key": "numeroResumen",
+      "value": "81"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Control backend directo EC2",
+      "item": [
+        {
+          "name": "00.1 EC2 - Listar cursos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{ec2BackendUrl}}/cursos",
+            "description": "Control rapido para confirmar que el backend Spring Boot esta vivo en EC2."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EC2 responde 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta contiene cursos', function () {",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - API Gateway sin token",
+      "item": [
+        {
+          "name": "01.1 Bloqueo JWT - Descargar resumen S3 sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/downloadResumen?numeroResumen={{numeroResumen}}",
+            "description": "Evidencia obligatoria: API Gateway bloquea una ruta real cuando no se envia token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Mensaje Unauthorized', function () {",
+                  "  pm.expect(pm.response.text()).to.include('Unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.2 Bloqueo JWT - Resumen local sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/inscripciones/{{numeroResumen}}/resumen",
+            "description": "Segunda evidencia de bloqueo, ahora con ruta con parametro de path."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - API Gateway con token Azure",
+      "item": [
+        {
+          "name": "02.1 Descargar resumen generado por Spring Boot",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/inscripciones/{{numeroResumen}}/resumen",
+            "description": "Genera y descarga el archivo fisico resumen.txt usando API Gateway con JWT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta contiene resumen correcto', function () {",
+                  "  pm.expect(pm.response.text()).to.include('Resumen de inscripcion');",
+                  "  pm.expect(pm.response.text()).to.include('Numero resumen: ' + pm.collectionVariables.get('numeroResumen'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.2 S3 - Subir resumen",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/s3/uploadResumen?numeroResumen={{numeroResumen}}",
+            "description": "Sube el resumen al bucket S3 en la clave numeroResumen/resumen.txt."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Clave S3 correcta', function () {",
+                  "  pm.expect(data.clave).to.eql(pm.collectionVariables.get('numeroResumen') + '/resumen.txt');",
+                  "});",
+                  "pm.test('Respuesta indica subida', function () {",
+                  "  pm.expect(data.mensaje).to.include('subido');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.3 S3 - Actualizar resumen",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/s3/updateResumen?numeroResumen={{numeroResumen}}",
+            "description": "Actualiza el archivo resumen.txt existente en S3."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Clave S3 correcta', function () {",
+                  "  pm.expect(data.clave).to.eql(pm.collectionVariables.get('numeroResumen') + '/resumen.txt');",
+                  "});",
+                  "pm.test('Respuesta indica actualizacion', function () {",
+                  "  pm.expect(data.mensaje).to.include('actualizado');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.4 S3 - Descargar resumen",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/s3/downloadResumen?numeroResumen={{numeroResumen}}",
+            "description": "Descarga desde S3 el archivo resumen.txt protegido por JWT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respuesta contiene resumen descargado desde S3', function () {",
+                  "  pm.expect(pm.response.text()).to.include('Resumen de inscripcion');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.5 S3 - Eliminar resumen",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/s3/deleteResumen?numeroResumen={{numeroResumen}}",
+            "description": "Elimina desde S3 el archivo resumen.txt protegido por JWT. Ejecutar al final."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Clave S3 correcta', function () {",
+                  "  pm.expect(data.clave).to.eql(pm.collectionVariables.get('numeroResumen') + '/resumen.txt');",
+                  "});",
+                  "pm.test('Respuesta indica eliminacion', function () {",
+                  "  pm.expect(data.mensaje).to.include('eliminado');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
