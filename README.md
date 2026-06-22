@@ -1,8 +1,8 @@
 # Formativa 1 Cloud Native - CDY2204
 
-Este repositorio contiene una solucion cloud native para una plataforma educativa de cursos virtuales. El objetivo fue construir un microservicio REST simple y demostrable: listar cursos, agregar cursos, inscribir estudiantes, calcular el total de inscripcion y persistir la informacion en Oracle Cloud.
+Este repositorio contiene una solucion cloud native para una plataforma educativa de cursos virtuales. La Semana 5 reutiliza el backend y la configuracion de API Gateway/IDaaS trabajada en Semana 4, agregando Spring Security para proteger los endpoints del microservicio.
 
-La aplicacion no incluye frontend ni autenticacion. El foco del trabajo esta en el backend, la persistencia cloud, la imagen Docker y el despliegue automatico hacia AWS EC2 mediante GitHub Actions.
+La aplicacion no incluye frontend. El foco del trabajo esta en el backend, la persistencia cloud, la imagen Docker, el despliegue automatico hacia AWS EC2 mediante GitHub Actions y la autenticacion JWT exigida en Semana 5.
 
 ## Endpoints requeridos
 
@@ -26,15 +26,19 @@ El flujo de uso esperado es crear uno o mas cursos, revisar la lista disponible 
 - Maven
 - Spring Web
 - Spring Data JPA
+- Spring Security
+- OAuth2 Resource Server JWT
 - Oracle JDBC
 - Docker
 - Docker Hub
 - GitHub Actions
 - AWS EC2
+- AWS API Gateway
+- Azure AD B2C como IDaaS
 - Oracle Cloud Database
 - Postman
 
-La eleccion de estas tecnologias mantiene el proyecto enfocado: Spring Boot y Maven para el microservicio, Oracle Cloud para persistencia, Docker/Docker Hub para empaquetado y publicacion, GitHub Actions para CI/CD y AWS EC2 para ejecutar el contenedor publicado.
+La eleccion de estas tecnologias mantiene el proyecto enfocado: Spring Boot y Maven para el microservicio, Oracle Cloud para persistencia, Docker/Docker Hub para empaquetado y publicacion, GitHub Actions para CI/CD, AWS EC2 para ejecutar el contenedor publicado, AWS API Gateway para exponer los endpoints y Azure AD B2C para emitir los JWT.
 
 ## Ejecutar localmente
 
@@ -56,6 +60,8 @@ export AWS_ACCESS_KEY_ID='TU_ACCESS_KEY_AWS_ACADEMY'
 export AWS_SECRET_ACCESS_KEY='TU_SECRET_KEY_AWS_ACADEMY'
 export AWS_SESSION_TOKEN='TU_SESSION_TOKEN_AWS_ACADEMY'
 export AWS_S3_BUCKET_NAME='TU_BUCKET_S3'
+
+export AZURE_B2C_ISSUER_URI='https://TU_TENANT.b2clogin.com/TU_TENANT.onmicrosoft.com/TU_POLITICA/v2.0/'
 ```
 
 Si las credenciales AWS ya estan guardadas como GitHub Secrets, el bucket se puede crear desde GitHub Actions:
@@ -74,6 +80,7 @@ AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_SESSION_TOKEN
 AWS_S3_BUCKET_NAME
+AZURE_B2C_ISSUER_URI
 ```
 
 Compilar y ejecutar pruebas:
@@ -90,10 +97,17 @@ java -jar target/formativa-cloud-native-0.0.1-SNAPSHOT.jar
 
 ## Probar con curl
 
+Todos los endpoints requieren un token JWT valido. Para pruebas locales, define primero:
+
+```bash
+export ACCESS_TOKEN='JWT_EMITIDO_POR_AZURE_AD_B2C'
+```
+
 Crear curso:
 
 ```bash
 curl --location 'http://localhost:8080/cursos' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
   --header 'Content-Type: application/json' \
   --data '{
     "nombre": "Spring Boot Cloud Native",
@@ -106,13 +120,15 @@ curl --location 'http://localhost:8080/cursos' \
 Listar cursos:
 
 ```bash
-curl --location 'http://localhost:8080/cursos'
+curl --location 'http://localhost:8080/cursos' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 Inscribir estudiante:
 
 ```bash
 curl --location 'http://localhost:8080/inscripciones' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
   --header 'Content-Type: application/json' \
   --data '{
     "estudianteNombre": "Maria Perez",
@@ -125,27 +141,34 @@ Generar y descargar el resumen fisico:
 
 ```bash
 curl --location 'http://localhost:8080/inscripciones/1/resumen' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
   --output resumen.txt
 ```
 
 Subir el resumen generado a S3. El objeto queda en la clave `1/resumen.txt`:
 
 ```bash
-curl --request POST 'http://localhost:8080/s3/uploadResumen?numeroResumen=1'
+curl --request POST 'http://localhost:8080/s3/uploadResumen?numeroResumen=1' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 Actualizar, descargar y eliminar el resumen en S3:
 
 ```bash
-curl --request PUT 'http://localhost:8080/s3/updateResumen?numeroResumen=1'
-curl --location 'http://localhost:8080/s3/downloadResumen?numeroResumen=1' --output resumen-s3.txt
-curl --request DELETE 'http://localhost:8080/s3/deleteResumen?numeroResumen=1'
+curl --request PUT 'http://localhost:8080/s3/updateResumen?numeroResumen=1' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
+curl --location 'http://localhost:8080/s3/downloadResumen?numeroResumen=1' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
+  --output resumen-s3.txt
+curl --request DELETE 'http://localhost:8080/s3/deleteResumen?numeroResumen=1' \
+  --header "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 Si se quiere subir o reemplazar un archivo editado manualmente desde el computador, usar `multipart/form-data` con el campo `file`:
 
 ```bash
 curl --request PUT 'http://localhost:8080/s3/updateResumen?numeroResumen=1' \
+  --header "Authorization: Bearer $ACCESS_TOKEN" \
   --form 'file=@resumen.txt'
 ```
 
@@ -160,6 +183,7 @@ docker run -d \
   -p 8080:8080 \
   -e ORACLE_DB_USERNAME='ADMIN' \
   -e ORACLE_DB_PASSWORD='TU_PASSWORD_ORACLE' \
+  -e AZURE_B2C_ISSUER_URI='https://TU_TENANT.b2clogin.com/TU_TENANT.onmicrosoft.com/TU_POLITICA/v2.0/' \
   formativa-cloud-native:1.0
 ```
 
@@ -169,48 +193,12 @@ Para crear una imagen manual compatible con una EC2 x86_64 desde Mac Apple Silic
 docker build --platform linux/amd64 -t formativa-cloud-native:1.0 .
 ```
 
-## Documentacion de entrega
+## Documentacion de entrega Semana 5
 
-La guia completa de arquitectura, configuracion cloud, pipeline, pruebas Postman, evidencias recomendadas y checklist tecnico esta en:
+La guia de aplicacion de la pauta Semana 5, basada en la reutilizacion de Semana 4, esta en:
 
-[docs/ENTREGA.md](docs/ENTREGA.md)
-
-La guia puntual para capturar evidencias en Postman esta en:
-
-[docs/EVIDENCIAS_POSTMAN.md](docs/EVIDENCIAS_POSTMAN.md)
-
-La documentacion de Semana 4 para configurar Azure AD B2C, AWS API Gateway, autorizador JWT y pruebas por Postman esta en:
-
-[docs/SEMANA4_IDAAS_API_MANAGER.md](docs/SEMANA4_IDAAS_API_MANAGER.md)
-
-Version Word para adjuntar en la entrega:
-
-[docs/SEMANA4_IDAAS_API_MANAGER.docx](docs/SEMANA4_IDAAS_API_MANAGER.docx)
-
-Comprimido de documentacion para adjuntar:
-
-[docs/semana4_documentacion_idaas_api_manager.zip](docs/semana4_documentacion_idaas_api_manager.zip)
+[docs/SEMANA5_IDAAS_API_MANAGER_SECURITY.md](docs/SEMANA5_IDAAS_API_MANAGER_SECURITY.md)
 
 Coleccion Postman especifica para probar los endpoints publicados en API Gateway:
 
-[docs/postman_api_gateway_semana4_collection.json](docs/postman_api_gateway_semana4_collection.json)
-
-Checklist de evidencias finales para Word y video:
-
-[docs/EVIDENCIAS_SEMANA4_CHECKLIST.md](docs/EVIDENCIAS_SEMANA4_CHECKLIST.md)
-
-Version Word del checklist de evidencias:
-
-[docs/EVIDENCIAS_SEMANA4_CHECKLIST.docx](docs/EVIDENCIAS_SEMANA4_CHECKLIST.docx)
-
-Informe Word final con evidencias integradas:
-
-[docs/Informe_Formativa_Semana4_IDaaS_API_Manager.docx](docs/Informe_Formativa_Semana4_IDaaS_API_Manager.docx)
-
-El guion sugerido para grabar el video de entrega esta en:
-
-[docs/GUION_VIDEO.md](docs/GUION_VIDEO.md)
-
-Version HTML del guion:
-
-[docs/guion_video.html](docs/guion_video.html)
+[docs/postman_api_gateway_semana5_collection.json](docs/postman_api_gateway_semana5_collection.json)

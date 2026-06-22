@@ -1,0 +1,664 @@
+{
+  "info": {
+    "name": "CDY2204 Semana 5 - Reutilizacion Semana 4 + Spring Security",
+    "description": "Coleccion para evidenciar Semana 5 reutilizando la configuracion de Semana 4. Primero valida que el backend Spring Boot desplegado en EC2 quede securitizado con Spring Security y responda 401 sin JWT. Luego prueba los endpoints reutilizando el API Gateway y Azure AD B2C configurados en Semana 4.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "apiGatewayUrl",
+      "value": "https://f3k22g500d.execute-api.us-east-1.amazonaws.com",
+      "description": "URL base publica de AWS API Gateway."
+    },
+    {
+      "key": "ec2BackendUrl",
+      "value": "http://107.23.174.145:8080",
+      "description": "IP elastica o URL directa del backend Spring Boot en EC2. Se usa para evidenciar que Spring Security bloquea llamadas directas sin JWT."
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT emitido por Azure AD B2C. Debe coincidir con el issuer configurado en AZURE_B2C_ISSUER_URI."
+    },
+    {
+      "key": "cursoId",
+      "value": "1",
+      "description": "Se actualiza automaticamente al crear el curso demo por API Gateway."
+    },
+    {
+      "key": "numeroResumen",
+      "value": "1",
+      "description": "Se actualiza automaticamente al crear la inscripcion demo por API Gateway."
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Backend EC2 securitizado sin token",
+      "description": "Paso de la guia Semana 5: despues de redesplegar el backend modificado, llamar la IP elastica de EC2 y comprobar que Spring Security bloquea el acceso directo sin JWT.",
+      "item": [
+        {
+          "name": "00.1 EC2 - Listar cursos sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{ec2BackendUrl}}/cursos",
+            "description": "Debe responder 401 porque Spring Security protege el microservicio incluso antes de pasar por API Gateway."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Backend EC2 securitizado responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00.2 EC2 - Descargar resumen sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{ec2BackendUrl}}/inscripciones/{{numeroResumen}}/resumen",
+            "description": "Segunda evidencia directa contra EC2 para mostrar que los endpoints del backend quedaron securitizados."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Backend EC2 securitizado responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - API Gateway sin token",
+      "description": "Evidencia de seguridad sobre el API Gateway reutilizado de Semana 4: los endpoints inscritos deben responder 401 cuando no se envia JWT de Azure AD B2C.",
+      "item": [
+        {
+          "name": "01.1 Cursos - Listar sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/cursos",
+            "description": "Debe responder 401 porque no envia Authorization Bearer."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.2 Cursos - Crear sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/cursos",
+            "description": "Debe responder 401 al intentar crear curso sin JWT.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Semana 5 API Gateway Demo\",\n  \"instructor\": \"Docente CDY2204\",\n  \"duracion\": \"24 horas\",\n  \"costo\": 120000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.3 Inscripciones - Crear sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/inscripciones",
+            "description": "Debe responder 401 al intentar inscribir sin JWT.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudianteNombre\": \"Estudiante Demo Semana 5\",\n  \"estudianteEmail\": \"demo.semana5@duocuc.cl\",\n  \"cursoIds\": [{{cursoId}}]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.4 Resumen local - Descargar sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/inscripciones/{{numeroResumen}}/resumen",
+            "description": "Debe responder 401 para una ruta con parametro de path."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.5 S3 - Subir resumen sin token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/uploadResumen?numeroResumen={{numeroResumen}}",
+            "description": "Debe responder 401 al intentar subir resumen sin JWT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.6 S3 - Descargar resumen sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/downloadResumen?numeroResumen={{numeroResumen}}",
+            "description": "Debe responder 401 al intentar descargar desde S3 sin JWT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.7 S3 - Actualizar resumen sin token",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/updateResumen?numeroResumen={{numeroResumen}}",
+            "description": "Debe responder 401 al intentar actualizar resumen sin JWT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.8 S3 - Eliminar resumen sin token",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/deleteResumen?numeroResumen={{numeroResumen}}",
+            "description": "Debe responder 401 al intentar eliminar resumen sin JWT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token responde 401 Unauthorized', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - API Gateway con token Azure AD B2C",
+      "description": "Evidencia funcional sobre el API Gateway e IDaaS reutilizados de Semana 4: los endpoints inscritos funcionan cuando se envia un JWT valido.",
+      "item": [
+        {
+          "name": "02.1 Cursos - Listar",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/cursos",
+            "description": "Lista cursos mediante API Gateway con JWT valido."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Con token responde 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('La respuesta es un arreglo', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.2 Cursos - Crear",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/cursos",
+            "description": "Crea un curso mediante API Gateway y guarda cursoId.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Semana 5 API Gateway Demo\",\n  \"instructor\": \"Docente CDY2204\",\n  \"duracion\": \"24 horas\",\n  \"costo\": 120000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Curso creado con 201 Created', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.test('La respuesta contiene id de curso', function () { pm.expect(data.id).to.exist; });",
+                  "pm.collectionVariables.set('cursoId', String(data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.3 Inscripciones - Crear",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{apiGatewayUrl}}/inscripciones",
+            "description": "Crea una inscripcion mediante API Gateway y guarda numeroResumen.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudianteNombre\": \"Estudiante Demo Semana 5\",\n  \"estudianteEmail\": \"demo.semana5@duocuc.cl\",\n  \"cursoIds\": [{{cursoId}}]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inscripcion creada con 201 Created', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.test('La respuesta contiene id de inscripcion', function () { pm.expect(data.id).to.exist; });",
+                  "pm.collectionVariables.set('numeroResumen', String(data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.4 Resumen local - Descargar",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/inscripciones/{{numeroResumen}}/resumen",
+            "description": "Genera y descarga el resumen construido por Spring Boot."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Con token responde 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta contiene resumen de inscripcion', function () { pm.expect(pm.response.text()).to.include('Resumen de inscripcion'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.5 S3 - Subir resumen",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/uploadResumen?numeroResumen={{numeroResumen}}",
+            "description": "Sube a S3 el resumen generado."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Con token responde 200 OK', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Clave S3 correcta', function () { pm.expect(data.clave).to.eql(pm.collectionVariables.get('numeroResumen') + '/resumen.txt'); });",
+                  "pm.test('Respuesta indica subida', function () { pm.expect(data.mensaje).to.include('subido'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.6 S3 - Actualizar resumen",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/updateResumen?numeroResumen={{numeroResumen}}",
+            "description": "Actualiza en S3 el resumen generado."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Con token responde 200 OK', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Clave S3 correcta', function () { pm.expect(data.clave).to.eql(pm.collectionVariables.get('numeroResumen') + '/resumen.txt'); });",
+                  "pm.test('Respuesta indica actualizacion', function () { pm.expect(data.mensaje).to.include('actualizado'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.7 S3 - Descargar resumen",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/downloadResumen?numeroResumen={{numeroResumen}}",
+            "description": "Descarga desde S3 el resumen usando API Gateway con JWT."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Con token responde 200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta contiene resumen descargado desde S3', function () { pm.expect(pm.response.text()).to.include('Resumen de inscripcion'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.8 S3 - Eliminar resumen",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/s3/deleteResumen?numeroResumen={{numeroResumen}}",
+            "description": "Elimina desde S3 la evidencia usada en la prueba."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('accessToken');",
+                  "if (!token) {",
+                  "  throw new Error('Falta accessToken. Pega el JWT de Azure AD B2C antes de continuar.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Con token responde 200 OK', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Clave S3 correcta', function () { pm.expect(data.clave).to.eql(pm.collectionVariables.get('numeroResumen') + '/resumen.txt'); });",
+                  "pm.test('Respuesta indica eliminacion', function () { pm.expect(data.mensaje).to.include('eliminado'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
