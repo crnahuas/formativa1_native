@@ -107,17 +107,17 @@ jobs:
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker pull "$DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
 
-            CONTAINERS_ON_8080=$(docker ps -q --filter "publish=8080")
-            if [ -n "$CONTAINERS_ON_8080" ]; then
-              docker stop $CONTAINERS_ON_8080
+            CONTAINERS_ON_8080=\$(docker ps -q --filter "publish=8080")
+            if [ -n "\$CONTAINERS_ON_8080" ]; then
+              docker stop \$CONTAINERS_ON_8080
             fi
 
             docker stop "$IMAGE_NAME" || true
             docker rm "$IMAGE_NAME" || true
             docker rm formativa-cloud-native || true
 
-            CONFIG_FILE="$HOME/formativa-cloud-native-application.yml"
-            rm -f "$CONFIG_FILE"
+            CONFIG_FILE="\$HOME/formativa-cloud-native-application.yml"
+            rm -f "\$CONFIG_FILE"
 
             printf '%s\n' \
               'spring:' \
@@ -137,13 +137,13 @@ jobs:
               "  session-token: \"$AWS_SESSION_TOKEN\"" \
               '  s3:' \
               "    bucket-name: \"$AWS_S3_BUCKET_NAME\"" \
-              > "$CONFIG_FILE"
+              > "\$CONFIG_FILE"
 
             docker run -d \
               --name "$IMAGE_NAME" \
               --restart unless-stopped \
               -p 8080:8080 \
-              -v "$CONFIG_FILE:/app/application.yml:ro" \
+              -v "\$CONFIG_FILE:/app/application.yml:ro" \
               -e ORACLE_DB_URL="${ORACLE_DB_URL:-jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=/app/wallet}" \
               -e ORACLE_DB_USERNAME="${ORACLE_DB_USERNAME:-ADMIN}" \
               -e ORACLE_DB_PASSWORD="$ORACLE_DB_PASSWORD" \
