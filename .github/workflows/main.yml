@@ -128,24 +128,33 @@ jobs:
             docker rm "$IMAGE_NAME" || true
             docker rm formativa-cloud-native || true
 
-            ENV_FILE="\$HOME/formativa-cloud-native.env"
-            cat > "\$ENV_FILE" << ENVVARS
-          DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME
-          ORACLE_DB_URL=${ORACLE_DB_URL:-jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=/app/wallet}
-          ORACLE_DB_USERNAME=${ORACLE_DB_USERNAME:-ADMIN}
-          ORACLE_DB_PASSWORD=$ORACLE_DB_PASSWORD
-          AWS_REGION=$AWS_REGION
-          AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-          AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-          AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN
-          AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME
-          AZURE_B2C_ISSUER_URI=$AZURE_B2C_ISSUER_URI
-          APP_CORS_ALLOWED_ORIGINS=$APP_CORS_ALLOWED_ORIGINS
-          RABBITMQ_USERNAME=$RABBITMQ_USERNAME
-          RABBITMQ_PASSWORD=$RABBITMQ_PASSWORD
-          ENVVARS
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE="docker-compose"
+            else
+              sudo dnf install -y docker-compose-plugin || sudo yum install -y docker-compose-plugin
+              COMPOSE="docker compose"
+            fi
 
-            docker compose -f "\$HOME/docker-compose.ec2.yml" --env-file "\$ENV_FILE" pull
-            docker compose -f "\$HOME/docker-compose.ec2.yml" --env-file "\$ENV_FILE" up -d
-            docker compose -f "\$HOME/docker-compose.ec2.yml" --env-file "\$ENV_FILE" ps
+            ENV_FILE="\$HOME/formativa-cloud-native.env"
+            printf '%s\n' \
+              "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" \
+              "ORACLE_DB_URL=${ORACLE_DB_URL:-jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=/app/wallet}" \
+              "ORACLE_DB_USERNAME=${ORACLE_DB_USERNAME:-ADMIN}" \
+              "ORACLE_DB_PASSWORD=$ORACLE_DB_PASSWORD" \
+              "AWS_REGION=$AWS_REGION" \
+              "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+              "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+              "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN" \
+              "AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME" \
+              "AZURE_B2C_ISSUER_URI=$AZURE_B2C_ISSUER_URI" \
+              "APP_CORS_ALLOWED_ORIGINS=$APP_CORS_ALLOWED_ORIGINS" \
+              "RABBITMQ_USERNAME=$RABBITMQ_USERNAME" \
+              "RABBITMQ_PASSWORD=$RABBITMQ_PASSWORD" \
+              > "\$ENV_FILE"
+
+            \$COMPOSE -f "\$HOME/docker-compose.ec2.yml" --env-file "\$ENV_FILE" pull
+            \$COMPOSE -f "\$HOME/docker-compose.ec2.yml" --env-file "\$ENV_FILE" up -d
+            \$COMPOSE -f "\$HOME/docker-compose.ec2.yml" --env-file "\$ENV_FILE" ps
           EOF
