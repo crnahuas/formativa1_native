@@ -105,14 +105,18 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       # Paso 10: Copiar compose a EC2
-      - name: Copy Docker Compose file to EC2
+      - name: Copy Docker Compose and RabbitMQ config to EC2
         if: github.event_name != 'pull_request'
         env:
           USER_SERVER: ${{ secrets.USER_SERVER }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$USER_SERVER@$EC2_HOST" "mkdir -p ~/rabbitmq"
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             docker-compose.ec2.yml "$USER_SERVER@$EC2_HOST:~/docker-compose.ec2.yml"
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            rabbitmq/rabbitmq.conf rabbitmq/definitions.json "$USER_SERVER@$EC2_HOST:~/rabbitmq/"
 
       # Paso 11: Conectarse a EC2 y desplegar app + RabbitMQ
       - name: SSH commands to deploy

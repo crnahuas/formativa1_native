@@ -75,6 +75,7 @@ objeto en el bucket, tomar la captura antes de ejecutar `DELETE /s3/deleteResume
 | 35 | Binding | Routing key `resumen.inscripcion.key`. |
 | 36 | Mensaje pendiente | Mensaje publicado antes de consumir. |
 | 37 | Mensaje consumido | Cola vacia o conteo actualizado despues del consumo. |
+| 37B | Definiciones RabbitMQ | Archivo `rabbitmq/definitions.json` con cola, exchange y binding. |
 
 Valores esperados para la captura de configuracion:
 

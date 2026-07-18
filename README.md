@@ -126,6 +126,9 @@ La aplicacion usa la cola `resumen.inscripcion.queue`, el exchange
 EC2, el backend se conecta a RabbitMQ por la red interna Docker usando
 `RABBITMQ_HOST=rabbitmq` y `RABBITMQ_PORT=5672`; hacia internet solo se expone
 la consola de administracion en el puerto `15672`.
+Ademas, RabbitMQ carga `rabbitmq/definitions.json` al iniciar para crear
+automaticamente la cola, el exchange y el binding aunque el backend todavia no
+haya publicado mensajes.
 
 ## Frontend de pruebas
 

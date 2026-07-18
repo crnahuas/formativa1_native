@@ -73,6 +73,10 @@ Configuracion RabbitMQ usada por el backend:
 | `RABBITMQ_RESUMEN_EXCHANGE` | `resumen.inscripcion.exchange` |
 | `RABBITMQ_RESUMEN_ROUTING_KEY` | `resumen.inscripcion.key` |
 
+La carpeta `rabbitmq/` contiene `definitions.json` y `rabbitmq.conf`, usados por
+Docker Compose para crear automaticamente la cola, el exchange y el binding al
+iniciar RabbitMQ.
+
 ## Evidencia para la pauta
 
 - Spring Boot: mostrar codigo y respuesta JSON de `/cursos`.

@@ -138,6 +138,10 @@ Variables configuradas:
 | `RABBITMQ_RESUMEN_EXCHANGE` | `resumen.inscripcion.exchange` |
 | `RABBITMQ_RESUMEN_ROUTING_KEY` | `resumen.inscripcion.key` |
 
+Para evitar que la configuracion dependa solamente del arranque del backend,
+RabbitMQ carga el archivo `rabbitmq/definitions.json`, donde se declaran la
+cola, el exchange y el binding con la routing key requerida.
+
 El flujo demostrado es:
 
 1. Crear curso.

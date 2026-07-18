@@ -1,0 +1,37 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "resumen.inscripcion.exchange",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "resumen.inscripcion.queue",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "resumen.inscripcion.exchange",
+      "vhost": "/",
+      "destination": "resumen.inscripcion.queue",
+      "destination_type": "queue",
+      "routing_key": "resumen.inscripcion.key",
+      "arguments": {}
+    }
+  ]
+}
