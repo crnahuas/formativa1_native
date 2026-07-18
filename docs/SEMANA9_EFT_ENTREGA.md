@@ -6,16 +6,20 @@ Preparar la entrega final transversal usando el proyecto existente. No se
 requiere rehacer la aplicacion desde cero: el backend ya cubre cursos,
 inscripciones, seguridad JWT, Oracle Cloud, S3, RabbitMQ, Docker y despliegue.
 
-## Brechas corregidas en esta etapa
+## Componentes de la entrega
 
-- Se agrega una guia de IDaaS y API Manager en
-  `docs/SEMANA5_IDAAS_API_MANAGER_SECURITY.md`.
-- Se agrega un frontend separado en `frontend/index.html`, publicado como
+- Backend Spring Boot con endpoints JSON para cursos, inscripciones, resumen,
+  RabbitMQ y S3.
+- Frontend separado en `frontend/index.html`, publicado como
   contenedor independiente para demostrar consumo de endpoints con token JWT.
-- Se agrega un endpoint productor explicito para RabbitMQ:
+- Seguridad con Azure AD B2C mediante JWT validado por Spring Security.
+- API Gateway para exponer los endpoints del backend en AWS.
+- RabbitMQ en Docker para cola, productor y consumidor.
+- AWS S3 para almacenamiento cloud de resumenes.
+- Oracle Cloud como persistencia.
+- GitHub Actions para construir imagenes Docker y desplegar en EC2.
+- Endpoint productor explicito para RabbitMQ:
   `POST /inscripciones/{numeroResumen}/resumenes-mq/producir`.
-- Se alinea el pipeline para desplegar con `docker-compose.ec2.yml`, de modo que
-  la app y RabbitMQ queden levantados juntos.
 
 ## Flujo final recomendado
 
@@ -66,5 +70,6 @@ navegador o usar el contenedor `formativa-frontend` en el puerto `3000`.
 - Frontend: mostrar `http://IP_EC2:3000` consumiendo el backend con JWT.
 - CI/CD: mostrar GitHub Actions desplegando backend, frontend y RabbitMQ en EC2.
 - Postman: usar `docs/postman_eft_semana9_collection.json` como flujo final.
-- Documentacion: incluir este archivo y las guias de configuracion.
+- Documentacion: incluir este archivo, `docs/oracle_schema.sql` y la coleccion
+  Postman final.
 - Video: recorrer el flujo final en menos de 10 minutos.

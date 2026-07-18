@@ -1,8 +1,8 @@
-# Formativa 1 Cloud Native - CDY2204
+# EFT Cloud Native - CDY2204
 
-Este repositorio contiene una solucion cloud native para una plataforma educativa de cursos virtuales. La Semana 7 integra RabbitMQ para enviar y consumir mensajes asincronos asociados al resumen de inscripcion.
+Este repositorio contiene una solucion cloud native para una plataforma educativa de cursos virtuales preparada para la Evaluacion Final Transversal.
 
-La aplicacion incluye un backend Spring Boot y un cliente HTML simple para pruebas de la entrega final. El foco del trabajo esta en la persistencia cloud, RabbitMQ, la imagen Docker, el despliegue automatico hacia AWS EC2 mediante GitHub Actions y la autenticacion JWT.
+La aplicacion incluye backend Spring Boot, frontend HTML separado, persistencia en Oracle Cloud, almacenamiento AWS S3, RabbitMQ en Docker, API Gateway, Azure AD B2C, imagenes Docker y despliegue automatizado hacia AWS EC2 mediante GitHub Actions.
 
 ## Endpoints requeridos
 
@@ -105,7 +105,7 @@ Ejecutar:
 java -jar target/formativa-cloud-native-0.0.1-SNAPSHOT.jar
 ```
 
-Levantar RabbitMQ local antes de probar el flujo de Semana 7:
+Levantar RabbitMQ local antes de probar el flujo:
 
 ```bash
 docker compose up -d rabbitmq
@@ -242,28 +242,16 @@ Para crear una imagen manual compatible con una EC2 x86_64 desde Mac Apple Silic
 docker build --platform linux/amd64 -t formativa-cloud-native:1.0 .
 ```
 
-## Documentacion de entrega Semana 5
+## Documentacion EFT
 
-La guia de aplicacion de la pauta Semana 5, basada en la reutilizacion de Semana 4, esta en:
+Guia final de la entrega:
 
-[docs/SEMANA5_IDAAS_API_MANAGER_SECURITY.md](docs/SEMANA5_IDAAS_API_MANAGER_SECURITY.md)
+[docs/SEMANA9_EFT_ENTREGA.md](docs/SEMANA9_EFT_ENTREGA.md)
 
-Coleccion Postman especifica para probar los endpoints publicados en API Gateway:
-
-[docs/postman_api_gateway_semana5_collection.json](docs/postman_api_gateway_semana5_collection.json)
-
-Coleccion Postman final para la EFT Semana 9:
+Coleccion Postman final para probar EC2, API Gateway, JWT, RabbitMQ y S3:
 
 [docs/postman_eft_semana9_collection.json](docs/postman_eft_semana9_collection.json)
 
-## Documentacion de entrega Semana 7
+Script Oracle:
 
-La guia de RabbitMQ, flujo de prueba y evidencias sugeridas esta en:
-
-[docs/SEMANA7_RABBITMQ.md](docs/SEMANA7_RABBITMQ.md)
-
-## Documentacion de entrega Semana 9 EFT
-
-La preparacion final de la entrega transversal esta en:
-
-[docs/SEMANA9_EFT_ENTREGA.md](docs/SEMANA9_EFT_ENTREGA.md)
+[docs/oracle_schema.sql](docs/oracle_schema.sql)
