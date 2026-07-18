@@ -248,6 +248,14 @@ Guia final de la entrega:
 
 [docs/SEMANA9_EFT_ENTREGA.md](docs/SEMANA9_EFT_ENTREGA.md)
 
+Texto base para el informe:
+
+[docs/INFORME_EFT.md](docs/INFORME_EFT.md)
+
+Checklist de evidencias:
+
+[docs/EVIDENCIAS_EFT.md](docs/EVIDENCIAS_EFT.md)
+
 Coleccion Postman final para probar EC2, API Gateway, JWT, RabbitMQ y S3:
 
 [docs/postman_eft_semana9_collection.json](docs/postman_eft_semana9_collection.json)

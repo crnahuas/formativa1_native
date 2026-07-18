@@ -72,4 +72,6 @@ navegador o usar el contenedor `formativa-frontend` en el puerto `3000`.
 - Postman: usar `docs/postman_eft_semana9_collection.json` como flujo final.
 - Documentacion: incluir este archivo, `docs/oracle_schema.sql` y la coleccion
   Postman final.
+- Informe: usar `docs/INFORME_EFT.md` como texto base.
+- Evidencias: usar `docs/EVIDENCIAS_EFT.md` como checklist de capturas.
 - Video: recorrer el flujo final en menos de 10 minutos.
