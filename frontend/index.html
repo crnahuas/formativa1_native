@@ -3,18 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CDY2204 EFT - Cliente de pruebas</title>
+  <title>CDY2204 EFT</title>
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f5f7fb;
+      --bg: #f4f6fa;
       --panel: #ffffff;
-      --border: #d8dee8;
-      --text: #172033;
-      --muted: #5c667a;
-      --accent: #176c85;
-      --accent-dark: #0f5266;
-      --danger: #9d2c2c;
+      --line: #d7dee8;
+      --text: #162033;
+      --muted: #5e687a;
+      --primary: #166b7f;
+      --primary-dark: #104f60;
+      --danger: #9f2d2d;
     }
 
     * {
@@ -35,11 +34,15 @@
     }
 
     header {
-      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-end;
+      margin-bottom: 18px;
     }
 
     h1 {
-      margin: 0 0 6px;
+      margin: 0;
       font-size: 28px;
     }
 
@@ -49,19 +52,31 @@
     }
 
     p {
-      margin: 0;
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    .status {
+      min-width: 120px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      text-align: center;
+      font-weight: 700;
       color: var(--muted);
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(300px, 380px) 1fr;
       gap: 16px;
+      align-items: start;
     }
 
     section {
       background: var(--panel);
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
       border-radius: 8px;
       padding: 16px;
     }
@@ -77,7 +92,7 @@
     input,
     textarea {
       width: 100%;
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
       border-radius: 6px;
       padding: 10px;
       font: inherit;
@@ -90,8 +105,8 @@
     }
 
     .actions {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin-top: 12px;
     }
@@ -100,44 +115,53 @@
       border: 0;
       border-radius: 6px;
       padding: 10px 12px;
-      background: var(--accent);
+      background: var(--primary);
       color: #fff;
       font-weight: 700;
       cursor: pointer;
     }
 
     button:hover {
-      background: var(--accent-dark);
+      background: var(--primary-dark);
     }
 
     button.secondary {
-      background: #445066;
+      background: #485466;
     }
 
-    .output {
-      min-height: 280px;
-      white-space: pre-wrap;
+    pre {
+      min-height: 520px;
+      margin: 0;
+      padding: 14px;
       overflow: auto;
+      white-space: pre-wrap;
+      border-radius: 8px;
       background: #111827;
       color: #d9f99d;
-      border-radius: 8px;
-      padding: 14px;
-      font-family: Menlo, Consolas, monospace;
-      font-size: 13px;
+      font: 13px Menlo, Consolas, monospace;
     }
 
     .error {
       color: var(--danger);
-      font-weight: 700;
     }
 
-    @media (max-width: 820px) {
+    @media (max-width: 860px) {
       main {
         padding: 16px;
       }
 
+      header,
       .grid {
-        grid-template-columns: 1fr;
+        display: block;
+      }
+
+      .status {
+        margin-top: 12px;
+        text-align: left;
+      }
+
+      section + section {
+        margin-top: 16px;
       }
     }
   </style>
@@ -145,23 +169,24 @@
 <body>
   <main>
     <header>
-      <h1>CDY2204 EFT - Cliente de pruebas</h1>
-      <p>Cliente local para demostrar API Gateway o EC2 con JWT emitido por Azure AD B2C.</p>
+      <div>
+        <h1>CDY2204 EFT</h1>
+        <p>Cliente frontend para probar backend, IDaaS, RabbitMQ y S3.</p>
+      </div>
+      <div id="status" class="status">Sin prueba</div>
     </header>
 
-    <section>
-      <h2>Conexion</h2>
-      <label for="baseUrl">URL base</label>
-      <input id="baseUrl" value="http://localhost:8080" autocomplete="off">
-      <label for="token">JWT Azure AD B2C</label>
-      <textarea id="token" placeholder="Pegar token sin la palabra Bearer"></textarea>
-    </section>
-
-    <div class="grid" style="margin-top: 16px;">
+    <div class="grid">
       <section>
-        <h2>Curso e inscripcion</h2>
-        <label for="cursoNombre">Nombre curso</label>
-        <input id="cursoNombre" value="Spring Boot Cloud Native">
+        <h2>Conexion</h2>
+        <label for="baseUrl">URL backend</label>
+        <input id="baseUrl" autocomplete="off">
+        <label for="token">JWT Azure AD B2C</label>
+        <textarea id="token" placeholder="Pegar token sin Bearer"></textarea>
+
+        <h2 style="margin-top: 18px;">Datos</h2>
+        <label for="cursoNombre">Curso</label>
+        <input id="cursoNombre" value="EFT Cloud Native Spring Boot">
         <label for="instructor">Instructor</label>
         <input id="instructor" value="Docente CDY2204">
         <label for="duracion">Duracion</label>
@@ -176,79 +201,97 @@
         <input id="cursoId" type="number" value="1">
         <label for="numeroResumen">Numero resumen</label>
         <input id="numeroResumen" type="number" value="1">
+      </section>
+
+      <section>
+        <h2>Flujo</h2>
         <div class="actions">
           <button onclick="listarCursos()">Listar cursos</button>
           <button onclick="crearCurso()">Crear curso</button>
           <button onclick="crearInscripcion()">Crear inscripcion</button>
-        </div>
-      </section>
-
-      <section>
-        <h2>Flujo Cloud</h2>
-        <div class="actions">
           <button onclick="generarResumen()">Generar resumen</button>
           <button onclick="producirRabbit()">Producir RabbitMQ</button>
           <button onclick="consumirRabbit()">Consumir RabbitMQ</button>
           <button onclick="subirS3()">Subir S3</button>
           <button onclick="descargarS3()">Descargar S3</button>
-          <button class="secondary" onclick="limpiarSalida()">Limpiar</button>
+          <button class="secondary" onclick="probarSinToken()">Probar 401</button>
+          <button class="secondary" onclick="limpiar()">Limpiar</button>
         </div>
-        <label>Resultado</label>
-        <div id="output" class="output">Listo para probar.</div>
+        <label>Respuesta</label>
+        <pre id="output">Listo para probar.</pre>
       </section>
     </div>
   </main>
 
   <script>
     const output = document.getElementById('output');
+    const statusBox = document.getElementById('status');
+    const defaultBackend = location.hostname && location.hostname !== '127.0.0.1'
+      ? `${location.protocol}//${location.hostname}:8080`
+      : 'http://localhost:8080';
+
+    document.getElementById('baseUrl').value = defaultBackend;
 
     function value(id) {
       return document.getElementById(id).value.trim();
     }
 
-    function numeroResumen() {
+    function resumenId() {
       return encodeURIComponent(value('numeroResumen'));
     }
 
-    function headers(json) {
+    function authHeaders(json) {
       const token = value('token');
-      const result = {};
+      const headers = {};
       if (token) {
-        result.Authorization = `Bearer ${token}`;
+        headers.Authorization = `Bearer ${token}`;
       }
       if (json) {
-        result['Content-Type'] = 'application/json';
+        headers['Content-Type'] = 'application/json';
       }
-      return result;
+      return headers;
+    }
+
+    function setStatus(code) {
+      statusBox.textContent = `HTTP ${code}`;
+      statusBox.classList.toggle('error', code >= 400);
     }
 
     async function call(path, options = {}) {
       const base = value('baseUrl').replace(/\/$/, '');
-      const response = await fetch(`${base}${path}`, options);
-      const text = await response.text();
-      let body = text;
+      const method = options.method || 'GET';
       try {
-        body = JSON.stringify(JSON.parse(text), null, 2);
+        const response = await fetch(`${base}${path}`, options);
+        const text = await response.text();
+        let body = text || '(sin cuerpo)';
+        try {
+          body = JSON.stringify(JSON.parse(text), null, 2);
+        } catch (error) {
+          body = text || '(sin cuerpo)';
+        }
+        setStatus(response.status);
+        output.textContent = `${method} ${path}\nHTTP ${response.status}\n\n${body}`;
+        output.classList.toggle('error', !response.ok);
       } catch (error) {
-        body = text || '(sin cuerpo)';
-      }
-      output.textContent = `${options.method || 'GET'} ${path}\nHTTP ${response.status}\n\n${body}`;
-      if (!response.ok) {
+        statusBox.textContent = 'Error';
+        statusBox.classList.add('error');
         output.classList.add('error');
-      } else {
-        output.classList.remove('error');
+        output.textContent = `${method} ${path}\n\n${error.message}`;
       }
-      return response;
     }
 
     function listarCursos() {
-      return call('/cursos', { headers: headers(false) });
+      return call('/cursos', { headers: authHeaders(false) });
+    }
+
+    function probarSinToken() {
+      return call('/cursos');
     }
 
     function crearCurso() {
       return call('/cursos', {
         method: 'POST',
-        headers: headers(true),
+        headers: authHeaders(true),
         body: JSON.stringify({
           nombre: value('cursoNombre'),
           instructor: value('instructor'),
@@ -261,7 +304,7 @@
     function crearInscripcion() {
       return call('/inscripciones', {
         method: 'POST',
-        headers: headers(true),
+        headers: authHeaders(true),
         body: JSON.stringify({
           estudianteNombre: value('estudianteNombre'),
           estudianteEmail: value('estudianteEmail'),
@@ -271,37 +314,39 @@
     }
 
     function generarResumen() {
-      return call(`/inscripciones/${numeroResumen()}/resumen`, { headers: headers(false) });
+      return call(`/inscripciones/${resumenId()}/resumen`, { headers: authHeaders(false) });
     }
 
     function producirRabbit() {
-      return call(`/inscripciones/${numeroResumen()}/resumenes-mq/producir`, {
+      return call(`/inscripciones/${resumenId()}/resumenes-mq/producir`, {
         method: 'POST',
-        headers: headers(false)
+        headers: authHeaders(false)
       });
     }
 
     function consumirRabbit() {
       return call('/inscripciones/resumenes-mq/consumir', {
         method: 'POST',
-        headers: headers(false)
+        headers: authHeaders(false)
       });
     }
 
     function subirS3() {
-      return call(`/s3/uploadResumen?numeroResumen=${numeroResumen()}`, {
+      return call(`/s3/uploadResumen?numeroResumen=${resumenId()}`, {
         method: 'POST',
-        headers: headers(false)
+        headers: authHeaders(false)
       });
     }
 
     function descargarS3() {
-      return call(`/s3/downloadResumen?numeroResumen=${numeroResumen()}`, {
-        headers: headers(false)
+      return call(`/s3/downloadResumen?numeroResumen=${resumenId()}`, {
+        headers: authHeaders(false)
       });
     }
 
-    function limpiarSalida() {
+    function limpiar() {
+      statusBox.textContent = 'Sin prueba';
+      statusBox.classList.remove('error');
       output.classList.remove('error');
       output.textContent = 'Listo para probar.';
     }

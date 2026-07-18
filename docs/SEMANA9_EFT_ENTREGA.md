@@ -10,8 +10,8 @@ inscripciones, seguridad JWT, Oracle Cloud, S3, RabbitMQ, Docker y despliegue.
 
 - Se agrega una guia de IDaaS y API Manager en
   `docs/SEMANA5_IDAAS_API_MANAGER_SECURITY.md`.
-- Se agrega un cliente HTML simple en `docs/frontend/index.html` para demostrar
-  consumo de endpoints con token JWT.
+- Se agrega un frontend separado en `frontend/index.html`, publicado como
+  contenedor independiente para demostrar consumo de endpoints con token JWT.
 - Se agrega un endpoint productor explicito para RabbitMQ:
   `POST /inscripciones/{numeroResumen}/resumenes-mq/producir`.
 - Se alinea el pipeline para desplegar con `docker-compose.ec2.yml`, de modo que
@@ -30,8 +30,8 @@ inscripciones, seguridad JWT, Oracle Cloud, S3, RabbitMQ, Docker y despliegue.
 9. Consumir el mensaje y guardar el resultado en Oracle Cloud.
 10. Subir, descargar o eliminar el resumen en S3.
 
-Como cliente visual opcional tambien se puede abrir `docs/frontend/index.html`
-en el navegador.
+Como cliente visual opcional tambien se puede abrir `frontend/index.html` en el
+navegador o usar el contenedor `formativa-frontend` en el puerto `3000`.
 
 ## Endpoints finales
 
@@ -48,6 +48,14 @@ en el navegador.
 | GET | `/s3/downloadResumen` | Objeto descargado desde S3 |
 | DELETE | `/s3/deleteResumen` | Objeto eliminado desde S3 |
 
+## Servicios desplegados
+
+| Servicio | Contenedor | Puerto |
+| --- | --- | --- |
+| Frontend | `formativa-frontend` | `3000` |
+| Backend Spring Boot | `formativa-cloud-native` | `8080` |
+| RabbitMQ Management | `formativa-rabbitmq` | `15672` |
+
 ## Evidencia para la pauta
 
 - Spring Boot: mostrar codigo y respuesta JSON de `/cursos`.
@@ -55,7 +63,8 @@ en el navegador.
 - RabbitMQ: mostrar cola, mensaje pendiente, consumo y registro en Oracle.
 - API Manager: mostrar rutas en API Gateway y prueba por URL Gateway.
 - S3: mostrar bucket y objeto `numeroResumen/resumen.txt`.
-- CI/CD: mostrar GitHub Actions desplegando en EC2.
+- Frontend: mostrar `http://IP_EC2:3000` consumiendo el backend con JWT.
+- CI/CD: mostrar GitHub Actions desplegando backend, frontend y RabbitMQ en EC2.
 - Postman: usar `docs/postman_eft_semana9_collection.json` como flujo final.
 - Documentacion: incluir este archivo y las guias de configuracion.
 - Video: recorrer el flujo final en menos de 10 minutos.

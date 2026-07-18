@@ -38,3 +38,12 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/${FRONTEND_IMAGE_NAME:-my-app-frontend}:latest
+    container_name: formativa-frontend
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "3000:80"

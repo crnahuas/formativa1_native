@@ -11,6 +11,7 @@ on:
 
 env:
   IMAGE_NAME: my-app
+  FRONTEND_IMAGE_NAME: my-app-frontend
 
 jobs:
   build:
@@ -46,7 +47,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # Paso 6: Construir la imagen de Docker
-      - name: Build Docker Image
+      - name: Build Backend Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -54,8 +55,16 @@ jobs:
           push: false
           tags: ${{ env.IMAGE_NAME }}:latest
 
-      # Paso 7: Hacer push de la imagen a DockerHub
-      - name: Push Docker Image
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          platforms: linux/amd64
+          push: false
+          tags: ${{ env.FRONTEND_IMAGE_NAME }}:latest
+
+      # Paso 7: Hacer push de las imagenes a DockerHub
+      - name: Push Backend Docker Image
         if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v6
         with:
@@ -65,6 +74,17 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Push Frontend Docker Image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
       # Paso 8: Configurar credenciales de AWS, incluyendo AWS_SESSION_TOKEN
       - name: Set up AWS credentials
@@ -100,6 +120,7 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          FRONTEND_IMAGE_NAME: ${{ env.FRONTEND_IMAGE_NAME }}
           USER_SERVER: ${{ secrets.USER_SERVER }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
           ORACLE_DB_URL: ${{ secrets.ORACLE_DB_URL }}
@@ -123,10 +144,17 @@ jobs:
             if [ -n "\$CONTAINERS_ON_8080" ]; then
               docker stop \$CONTAINERS_ON_8080
             fi
+            CONTAINERS_ON_3000=\$(docker ps -q --filter "publish=3000")
+            if [ -n "\$CONTAINERS_ON_3000" ]; then
+              docker stop \$CONTAINERS_ON_3000
+            fi
 
             docker stop "$IMAGE_NAME" || true
             docker rm "$IMAGE_NAME" || true
             docker rm formativa-cloud-native || true
+            docker stop "$FRONTEND_IMAGE_NAME" || true
+            docker rm "$FRONTEND_IMAGE_NAME" || true
+            docker rm formativa-frontend || true
 
             if docker compose version >/dev/null 2>&1; then
               COMPOSE="docker compose"
@@ -140,6 +168,7 @@ jobs:
             ENV_FILE="\$HOME/formativa-cloud-native.env"
             printf '%s\n' \
               "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" \
+              "FRONTEND_IMAGE_NAME=$FRONTEND_IMAGE_NAME" \
               "ORACLE_DB_URL=${ORACLE_DB_URL:-jdbc:oracle:thin:@procesobasedatos_high?TNS_ADMIN=/app/wallet}" \
               "ORACLE_DB_USERNAME=${ORACLE_DB_USERNAME:-ADMIN}" \
               "ORACLE_DB_PASSWORD=$ORACLE_DB_PASSWORD" \

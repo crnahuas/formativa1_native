@@ -113,15 +113,22 @@ docker compose up -d rabbitmq
 
 La consola queda disponible en `http://localhost:15672` con usuario `guest` y password `guest`.
 
-## Cliente de pruebas
+## Frontend de pruebas
 
-Para la entrega final EFT se incluye un cliente HTML simple en:
+Para la entrega final EFT se incluye un frontend separado en:
 
-[docs/frontend/index.html](docs/frontend/index.html)
+[frontend/index.html](frontend/index.html)
 
-Puede abrirse directamente en el navegador. Permite configurar la URL base de
-API Gateway o EC2, pegar un JWT emitido por Azure AD B2C y ejecutar el flujo de
-cursos, inscripciones, RabbitMQ y S3.
+El pipeline lo publica como imagen Docker independiente y `docker-compose.ec2.yml`
+lo levanta como contenedor `formativa-frontend` en el puerto `3000`. Permite
+configurar la URL base de API Gateway o EC2, pegar un JWT emitido por Azure AD
+B2C y ejecutar el flujo de cursos, inscripciones, RabbitMQ y S3.
+
+En EC2 queda disponible en:
+
+```text
+http://IP_PUBLICA_EC2:3000
+```
 
 ## Probar con curl
 
