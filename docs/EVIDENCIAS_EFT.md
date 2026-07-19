@@ -126,7 +126,7 @@ servicios desplegados en EC2.
 | Archivo | Que demuestra |
 | --- | --- |
 | `Frontend.png` | Cliente frontend separado configurado contra backend. |
-| `Frontend login Azure B2C.png` | Login iniciado desde el frontend mediante Azure AD B2C/MSAL. |
+| `Frontend login JWT Azure B2C.png` | Pantalla de ingreso del frontend usando JWT emitido por Azure AD B2C. |
 | `operacion-ok.png` | Operacion exitosa ejecutada desde el frontend. |
 | `Frontend examen finalizado.png` | Intento de examen finalizado desde frontend con token obtenido por login. |
 | `grupo-seguridad.png` | Grupo de seguridad con puertos necesarios para la entrega. |

@@ -21,15 +21,10 @@ AZURE_B2C_ISSUER_URI=<issuer del flujo B2C>
 APP_SECURITY_ROLES_ENABLED=true
 ```
 
-9. En el frontend, configurar:
-
-```text
-Azure B2C Client ID=<client id de la aplicacion>
-Azure B2C Authority=https://<tenant>.b2clogin.com/<tenant>.onmicrosoft.com/<policy>
-```
-
-10. Validar login desde el boton `Iniciar sesion`.
-11. Confirmar que el token queda cargado automaticamente en el campo JWT del frontend.
+9. Obtener un JWT desde el flujo de usuario de Azure AD B2C.
+10. Ingresar el token en la pantalla inicial del frontend.
+11. Confirmar que el frontend muestra la vista principal autenticada y reutiliza
+    el token automaticamente en las llamadas al backend.
 12. Validar en Postman:
    - Sin token: `401 Unauthorized`.
    - Estudiante consultando cursos: `200 OK`.
@@ -200,5 +195,5 @@ los puntos mas estrictos de la pauta:
 | Workflow con pasos Maven, build backend, build frontend, push DockerHub y SSH EC2 | GitHub Actions |
 | API Gateway mostrando rutas de contenidos, examenes, calificaciones y RabbitMQ | AWS API Gateway |
 | Productor y consumidor RabbitMQ probados con URL de API Gateway | Postman |
-| Login real desde frontend con Azure AD B2C/MSAL | Frontend |
+| Pantalla de ingreso frontend con JWT emitido por Azure AD B2C | Frontend |
 | Inicio y finalizacion de intento de examen desde frontend o Postman | Frontend/Postman |

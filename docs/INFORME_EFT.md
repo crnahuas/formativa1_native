@@ -75,9 +75,10 @@ calificaciones, RabbitMQ y escrituras S3; `ESTUDIANTE` o `INSTRUCTOR` para
 consultas, inscripciones, resumenes y descargas. Para evidenciar este punto se
 debe emitir el claim `roles`, `role`, `extension_Rol` o `extension_role` desde
 Azure AD B2C con los valores `ESTUDIANTE` e `INSTRUCTOR`.
-El frontend incorpora login con MSAL Browser para iniciar sesion contra Azure AD
-B2C y cargar el token automaticamente. El campo de JWT se mantiene como respaldo
-para pruebas academicas o Postman.
+El frontend incorpora una pantalla de ingreso academico con JWT emitido por
+Azure AD B2C. El token se obtiene desde el flujo de usuario de Azure y luego se
+ingresa en el frontend; desde ese momento el cliente lo utiliza automaticamente
+en las llamadas al backend.
 
 ## 5. Microservicio backend
 
@@ -124,8 +125,8 @@ Configuracion aplicada:
 5. Guardar el valor en el secret `AZURE_B2C_ISSUER_URI`.
 6. Configurar Spring Boot como OAuth2 Resource Server.
 7. Enviar el token en Postman o frontend usando `Authorization: Bearer`.
-8. Para frontend, configurar MSAL Browser con client id y authority de Azure AD
-   B2C.
+8. Para frontend, ingresar el JWT emitido por Azure AD B2C en la pantalla de
+   acceso inicial.
 9. Para roles, agregar un claim de aplicacion o atributo personalizado con
    `ESTUDIANTE` o `INSTRUCTOR` y activar `APP_SECURITY_ROLES_ENABLED=true`.
 
@@ -262,11 +263,12 @@ En EC2 queda disponible en:
 http://IP_PUBLICA_EC2:3000
 ```
 
-El frontend permite ingresar la URL del backend, iniciar sesion con Azure AD B2C
-mediante MSAL Browser, cargar el JWT automaticamente y ejecutar el flujo de
-prueba: listar cursos, crear curso, crear inscripcion, iniciar/finalizar examen,
-generar resumen, producir/consumir RabbitMQ y probar S3. El campo manual de JWT
-queda disponible solo como respaldo para pruebas controladas.
+El frontend muestra primero una pantalla de ingreso con JWT emitido por Azure AD
+B2C. Una vez ingresado el token, permite configurar la URL del backend y ejecutar
+el flujo de prueba: listar cursos, crear curso, crear inscripcion,
+iniciar/finalizar examen, generar resumen, producir/consumir RabbitMQ y probar
+S3. El token queda activo en la sesion del navegador y se usa automaticamente en
+las solicitudes al backend.
 
 ## 12. CI/CD y despliegue
 

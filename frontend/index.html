@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CDY2204 EFT</title>
-  <script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
   <style>
     :root {
       --bg: #f4f6fa;
@@ -57,31 +56,6 @@
       color: var(--muted);
     }
 
-    .status {
-      min-width: 120px;
-      padding: 8px 10px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: var(--panel);
-      text-align: center;
-      font-weight: 700;
-      color: var(--muted);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: minmax(300px, 380px) 1fr;
-      gap: 16px;
-      align-items: start;
-    }
-
-    section {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 16px;
-    }
-
     label {
       display: block;
       margin: 10px 0 6px;
@@ -105,13 +79,6 @@
       resize: vertical;
     }
 
-    .actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 12px;
-    }
-
     button {
       border: 0;
       border-radius: 6px;
@@ -130,6 +97,57 @@
       background: #485466;
     }
 
+    section,
+    .login-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .login-shell {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .login-panel {
+      width: min(720px, 100%);
+    }
+
+    .login-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    .status {
+      min-width: 120px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      text-align: center;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(300px, 380px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
     pre {
       min-height: 520px;
       margin: 0;
@@ -144,6 +162,10 @@
 
     .error {
       color: var(--danger);
+    }
+
+    .hidden {
+      display: none;
     }
 
     @media (max-width: 860px) {
@@ -168,13 +190,29 @@
   </style>
 </head>
 <body>
-  <main>
+  <div id="loginView" class="login-shell">
+    <section class="login-panel">
+      <h1>CDY2204 EFT</h1>
+      <p>Ingreso academico con JWT emitido por Azure AD B2C.</p>
+      <label for="loginToken">JWT Azure AD B2C</label>
+      <textarea id="loginToken" placeholder="Pegar token sin Bearer"></textarea>
+      <div class="login-actions">
+        <button onclick="ingresar()">Ingresar</button>
+      </div>
+      <p id="loginError" class="error"></p>
+    </section>
+  </div>
+
+  <main id="appView" class="hidden">
     <header>
       <div>
         <h1>CDY2204 EFT</h1>
-        <p>Cliente frontend para probar backend, IDaaS, RabbitMQ y S3.</p>
+        <p>Cliente frontend para probar backend, IDaaS, RabbitMQ, S3 y examenes.</p>
       </div>
-      <div id="status" class="status">Sin prueba</div>
+      <div>
+        <div id="status" class="status">Autenticado</div>
+        <button class="secondary" style="margin-top:8px;width:100%;" onclick="cerrarSesion()">Cerrar sesion</button>
+      </div>
     </header>
 
     <div class="grid">
@@ -182,16 +220,8 @@
         <h2>Conexion</h2>
         <label for="baseUrl">URL backend</label>
         <input id="baseUrl" autocomplete="off">
-        <label for="b2cClientId">Azure B2C Client ID</label>
-        <input id="b2cClientId" autocomplete="off" value="2d238bc1-3782-46ca-a066-0e7b3514ddf3">
-        <label for="b2cAuthority">Azure B2C Authority</label>
-        <input id="b2cAuthority" autocomplete="off" value="https://duocucazure.b2clogin.com/duocucazure.onmicrosoft.com/B2C_1_DuocDemoAzure_registro_login">
-        <div class="actions">
-          <button onclick="iniciarSesion()">Iniciar sesion</button>
-          <button class="secondary" onclick="cerrarSesion()">Cerrar sesion</button>
-        </div>
-        <label for="token">JWT Azure AD B2C</label>
-        <textarea id="token" placeholder="Token obtenido por login B2C o pegado manualmente"></textarea>
+        <label for="token">JWT activo</label>
+        <textarea id="token"></textarea>
 
         <h2 style="margin-top: 18px;">Datos</h2>
         <label for="cursoNombre">Curso</label>
@@ -246,20 +276,16 @@
   </main>
 
   <script>
+    const loginView = document.getElementById('loginView');
+    const appView = document.getElementById('appView');
     const output = document.getElementById('output');
     const statusBox = document.getElementById('status');
-    let msalInstance = null;
-    let activeAccount = null;
-    const msalSources = [
-      'https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js',
-      'https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.39.0/lib/msal-browser.min.js',
-      'https://unpkg.com/@azure/msal-browser@2.39.0/lib/msal-browser.min.js'
-    ];
     const defaultBackend = location.hostname && location.hostname !== '127.0.0.1'
       ? `${location.protocol}//${location.hostname}:8080`
       : 'http://localhost:8080';
 
     document.getElementById('baseUrl').value = defaultBackend;
+    restaurarSesion();
 
     function value(id) {
       return document.getElementById(id).value.trim();
@@ -269,103 +295,46 @@
       document.getElementById(id).value = newValue;
     }
 
+    function ingresar() {
+      const token = value('loginToken');
+      const error = document.getElementById('loginError');
+      if (!token) {
+        error.textContent = 'Debes ingresar un JWT emitido por Azure AD B2C.';
+        return;
+      }
+      localStorage.setItem('eftToken', token);
+      setValue('token', token);
+      error.textContent = '';
+      mostrarApp();
+    }
+
+    function restaurarSesion() {
+      const token = localStorage.getItem('eftToken');
+      if (token) {
+        setValue('loginToken', token);
+        setValue('token', token);
+        mostrarApp();
+      }
+    }
+
+    function mostrarApp() {
+      loginView.classList.add('hidden');
+      appView.classList.remove('hidden');
+      statusBox.textContent = 'Autenticado';
+      statusBox.classList.remove('error');
+      output.textContent = 'Sesion iniciada con JWT Azure AD B2C.';
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('eftToken');
+      setValue('loginToken', '');
+      setValue('token', '');
+      appView.classList.add('hidden');
+      loginView.classList.remove('hidden');
+    }
+
     function resumenId() {
       return encodeURIComponent(value('numeroResumen'));
-    }
-
-    function loadScript(src) {
-      return new Promise((resolve, reject) => {
-        if (document.querySelector(`script[src="${src}"]`)) {
-          resolve();
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = src;
-        script.async = true;
-        script.onload = resolve;
-        script.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
-        document.head.appendChild(script);
-      });
-    }
-
-    async function ensureMsalLoaded() {
-      if (window.msal) {
-        return window.msal;
-      }
-      for (const src of msalSources) {
-        try {
-          await loadScript(src);
-          if (window.msal) {
-            return window.msal;
-          }
-        } catch (error) {
-          // Prueba el siguiente CDN disponible.
-        }
-      }
-      throw new Error('No se pudo cargar MSAL Browser. Revisa conexion a internet, bloqueo del CDN o CSP del navegador.');
-    }
-
-    async function getMsalInstance() {
-      const clientId = value('b2cClientId');
-      const authority = value('b2cAuthority');
-      if (!clientId || !authority) {
-        throw new Error('Configura Azure B2C Client ID y Authority.');
-      }
-      if (msalInstance) {
-        return msalInstance;
-      }
-      const msalBrowser = await ensureMsalLoaded();
-      msalInstance = new msalBrowser.PublicClientApplication({
-        auth: {
-          clientId,
-          authority,
-          knownAuthorities: ['duocucazure.b2clogin.com'],
-          redirectUri: window.location.origin
-        },
-        cache: {
-          cacheLocation: 'localStorage'
-        }
-      });
-      return msalInstance;
-    }
-
-    async function iniciarSesion() {
-      try {
-        const msalApp = await getMsalInstance();
-        const response = await msalApp.loginPopup({ scopes: ['openid', 'profile'] });
-        activeAccount = response.account;
-        setValue('token', response.idToken);
-        statusBox.textContent = 'Sesion B2C';
-        statusBox.classList.remove('error');
-        output.classList.remove('error');
-        output.textContent = `Sesion iniciada\\nUsuario: ${activeAccount.username || activeAccount.name}\\nToken cargado automaticamente.`;
-      } catch (error) {
-        statusBox.textContent = 'Login error';
-        statusBox.classList.add('error');
-        output.classList.add('error');
-        output.textContent = error.message;
-      }
-    }
-
-    async function cerrarSesion() {
-      try {
-        const msalApp = await getMsalInstance();
-        const account = activeAccount || msalApp.getAllAccounts()[0];
-        setValue('token', '');
-        activeAccount = null;
-        if (account) {
-          await msalApp.logoutPopup({ account });
-        }
-        statusBox.textContent = 'Sin sesion';
-        statusBox.classList.remove('error');
-        output.classList.remove('error');
-        output.textContent = 'Sesion cerrada.';
-      } catch (error) {
-        statusBox.textContent = 'Logout error';
-        statusBox.classList.add('error');
-        output.classList.add('error');
-        output.textContent = error.message;
-      }
     }
 
     function parseJsonField(id) {
@@ -474,13 +443,6 @@
       return call(`/inscripciones/${resumenId()}/resumen`, { headers: authHeaders(false) });
     }
 
-    function producirRabbit() {
-      return call(`/inscripciones/${resumenId()}/resumenes-mq/producir`, {
-        method: 'POST',
-        headers: authHeaders(false)
-      });
-    }
-
     function iniciarIntento() {
       return call(`/examenes/${encodeURIComponent(value('examenId'))}/intentos`, {
         method: 'POST',
@@ -506,8 +468,15 @@
         body: JSON.stringify({
           puntajeObtenido: Number(value('puntajeObtenido')),
           respuestas,
-          comentario: 'Examen realizado desde frontend con autenticacion Azure AD B2C.'
+          comentario: 'Examen realizado desde frontend con JWT Azure AD B2C.'
         })
+      });
+    }
+
+    function producirRabbit() {
+      return call(`/inscripciones/${resumenId()}/resumenes-mq/producir`, {
+        method: 'POST',
+        headers: authHeaders(false)
       });
     }
 
@@ -532,7 +501,7 @@
     }
 
     function limpiar() {
-      statusBox.textContent = 'Sin prueba';
+      statusBox.textContent = 'Autenticado';
       statusBox.classList.remove('error');
       output.classList.remove('error');
       output.textContent = 'Listo para probar.';
