@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CDY2204 EFT</title>
+  <script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
   <style>
     :root {
       --bg: #f4f6fa;
@@ -181,8 +182,16 @@
         <h2>Conexion</h2>
         <label for="baseUrl">URL backend</label>
         <input id="baseUrl" autocomplete="off">
+        <label for="b2cClientId">Azure B2C Client ID</label>
+        <input id="b2cClientId" autocomplete="off" value="2d238bc1-3782-46ca-a066-0e7b3514ddf3">
+        <label for="b2cAuthority">Azure B2C Authority</label>
+        <input id="b2cAuthority" autocomplete="off" value="https://duocucazure.b2clogin.com/duocucazure.onmicrosoft.com/B2C_1_DuocDemoAzure_registro_login">
+        <div class="actions">
+          <button onclick="iniciarSesion()">Iniciar sesion</button>
+          <button class="secondary" onclick="cerrarSesion()">Cerrar sesion</button>
+        </div>
         <label for="token">JWT Azure AD B2C</label>
-        <textarea id="token" placeholder="Pegar token sin Bearer"></textarea>
+        <textarea id="token" placeholder="Token obtenido por login B2C o pegado manualmente"></textarea>
 
         <h2 style="margin-top: 18px;">Datos</h2>
         <label for="cursoNombre">Curso</label>
@@ -201,6 +210,17 @@
         <input id="cursoId" type="number" value="1">
         <label for="numeroResumen">Numero resumen</label>
         <input id="numeroResumen" type="number" value="1">
+        <label for="examenId">Examen ID</label>
+        <input id="examenId" type="number" value="1">
+        <label for="intentoId">Intento ID</label>
+        <input id="intentoId" type="number" value="1">
+        <label for="puntajeObtenido">Puntaje obtenido</label>
+        <input id="puntajeObtenido" type="number" value="92">
+        <label for="respuestas">Respuestas examen JSON</label>
+        <textarea id="respuestas">[
+  { "pregunta": "Arquitectura cloud native", "respuesta": "API Gateway, BFF, RabbitMQ y S3" },
+  { "pregunta": "Seguridad", "respuesta": "JWT emitido por Azure AD B2C" }
+]</textarea>
       </section>
 
       <section>
@@ -210,6 +230,8 @@
           <button onclick="crearCurso()">Crear curso</button>
           <button onclick="crearInscripcion()">Crear inscripcion</button>
           <button onclick="generarResumen()">Generar resumen</button>
+          <button onclick="iniciarIntento()">Iniciar examen</button>
+          <button onclick="finalizarIntento()">Finalizar examen</button>
           <button onclick="producirRabbit()">Producir RabbitMQ</button>
           <button onclick="consumirRabbit()">Consumir RabbitMQ</button>
           <button onclick="subirS3()">Subir S3</button>
@@ -226,6 +248,8 @@
   <script>
     const output = document.getElementById('output');
     const statusBox = document.getElementById('status');
+    let msalInstance = null;
+    let activeAccount = null;
     const defaultBackend = location.hostname && location.hostname !== '127.0.0.1'
       ? `${location.protocol}//${location.hostname}:8080`
       : 'http://localhost:8080';
@@ -236,8 +260,72 @@
       return document.getElementById(id).value.trim();
     }
 
+    function setValue(id, newValue) {
+      document.getElementById(id).value = newValue;
+    }
+
     function resumenId() {
       return encodeURIComponent(value('numeroResumen'));
+    }
+
+    function getMsalInstance() {
+      const clientId = value('b2cClientId');
+      const authority = value('b2cAuthority');
+      if (!clientId || !authority) {
+        throw new Error('Configura Azure B2C Client ID y Authority.');
+      }
+      msalInstance = new msal.PublicClientApplication({
+        auth: {
+          clientId,
+          authority,
+          knownAuthorities: ['duocucazure.b2clogin.com'],
+          redirectUri: window.location.origin
+        },
+        cache: {
+          cacheLocation: 'localStorage'
+        }
+      });
+      return msalInstance;
+    }
+
+    async function iniciarSesion() {
+      try {
+        const msalApp = getMsalInstance();
+        const response = await msalApp.loginPopup({ scopes: ['openid', 'profile'] });
+        activeAccount = response.account;
+        setValue('token', response.idToken);
+        statusBox.textContent = 'Sesion B2C';
+        statusBox.classList.remove('error');
+        output.classList.remove('error');
+        output.textContent = `Sesion iniciada\\nUsuario: ${activeAccount.username || activeAccount.name}\\nToken cargado automaticamente.`;
+      } catch (error) {
+        statusBox.textContent = 'Login error';
+        statusBox.classList.add('error');
+        output.classList.add('error');
+        output.textContent = error.message;
+      }
+    }
+
+    function cerrarSesion() {
+      const msalApp = getMsalInstance();
+      const account = activeAccount || msalApp.getAllAccounts()[0];
+      setValue('token', '');
+      activeAccount = null;
+      if (account) {
+        msalApp.logoutPopup({ account });
+      }
+      statusBox.textContent = 'Sin sesion';
+      statusBox.classList.remove('error');
+      output.classList.remove('error');
+      output.textContent = 'Sesion cerrada.';
+    }
+
+    function parseJsonField(id) {
+      try {
+        return JSON.parse(value(id));
+      } catch (error) {
+        throw new Error(`El campo ${id} no contiene JSON valido.`);
+      }
     }
 
     function authHeaders(json) {
@@ -269,6 +357,7 @@
         } catch (error) {
           body = text || '(sin cuerpo)';
         }
+        updateIds(path, text);
         setStatus(response.status);
         output.textContent = `${method} ${path}\nHTTP ${response.status}\n\n${body}`;
         output.classList.toggle('error', !response.ok);
@@ -277,6 +366,26 @@
         statusBox.classList.add('error');
         output.classList.add('error');
         output.textContent = `${method} ${path}\n\n${error.message}`;
+      }
+    }
+
+    function updateIds(path, text) {
+      if (!text) {
+        return;
+      }
+      try {
+        const data = JSON.parse(text);
+        if (data.id && path.includes('/examenes') && !path.includes('/intentos')) {
+          setValue('examenId', String(data.id));
+        }
+        if (data.id && path.includes('/intentos') && !path.includes('/finalizar')) {
+          setValue('intentoId', String(data.id));
+        }
+        if (data.inscripcionId) {
+          setValue('numeroResumen', String(data.inscripcionId));
+        }
+      } catch (error) {
+        // La respuesta puede ser texto plano, por ejemplo el resumen descargado.
       }
     }
 
@@ -321,6 +430,36 @@
       return call(`/inscripciones/${resumenId()}/resumenes-mq/producir`, {
         method: 'POST',
         headers: authHeaders(false)
+      });
+    }
+
+    function iniciarIntento() {
+      return call(`/examenes/${encodeURIComponent(value('examenId'))}/intentos`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          inscripcionId: Number(value('numeroResumen'))
+        })
+      });
+    }
+
+    function finalizarIntento() {
+      let respuestas;
+      try {
+        respuestas = parseJsonField('respuestas');
+      } catch (error) {
+        output.classList.add('error');
+        output.textContent = error.message;
+        return Promise.resolve();
+      }
+      return call(`/intentos/${encodeURIComponent(value('intentoId'))}/finalizar`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          puntajeObtenido: Number(value('puntajeObtenido')),
+          respuestas,
+          comentario: 'Examen realizado desde frontend con autenticacion Azure AD B2C.'
+        })
       });
     }
 

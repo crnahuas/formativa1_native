@@ -62,6 +62,11 @@
       "type": "string"
     },
     {
+      "key": "inscripcionId",
+      "value": "1",
+      "type": "string"
+    },
+    {
       "key": "calificacionId",
       "value": "",
       "type": "string"
@@ -79,6 +84,16 @@
     {
       "key": "routingKey",
       "value": "resumen.inscripcion.key",
+      "type": "string"
+    },
+    {
+      "key": "intentoId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "puntajeObtenido",
+      "value": "92",
       "type": "string"
     }
   ],
@@ -453,8 +468,11 @@
                 "exec": [
                   "pm.test('Inscripcion creada', function () { pm.response.to.have.status(201); });",
                   "const data = pm.response.json();",
-                  "const id = data.numeroResumen || data.id;",
-                  "if (id) { pm.collectionVariables.set('numeroResumen', String(id)); }"
+                  "const id = data.inscripcionId || data.numeroResumen || data.id;",
+                  "if (id) {",
+                  "  pm.collectionVariables.set('numeroResumen', String(id));",
+                  "  pm.collectionVariables.set('inscripcionId', String(id));",
+                  "}"
                 ]
               }
             }
@@ -483,7 +501,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"inscripcionId\": {{numeroResumen}},\n  \"examenId\": {{examenId}},\n  \"puntaje\": 92,\n  \"comentario\": \"Desempeno logrado en la evaluacion cloud native.\"\n}",
+              "raw": "{\n  \"inscripcionId\": {{inscripcionId}},\n  \"examenId\": {{examenId}},\n  \"puntaje\": 92,\n  \"comentario\": \"Desempeno logrado en la evaluacion cloud native.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -522,7 +540,7 @@
             },
             "method": "GET",
             "header": [],
-            "url": "{{ec2Url}}/calificaciones?inscripcionId={{numeroResumen}}",
+            "url": "{{ec2Url}}/calificaciones?inscripcionId={{inscripcionId}}",
             "description": "Capturar 200 OK con calificaciones de la inscripcion."
           },
           "event": [
@@ -533,6 +551,133 @@
                 "exec": [
                   "pm.test('Lista calificaciones', function () { pm.response.to.have.status(200); });",
                   "pm.test('Respuesta es arreglo', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.8 ESTUDIANTE inicia intento de examen",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{estudianteToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inscripcionId\": {{inscripcionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{ec2Url}}/examenes/{{examenId}}/intentos",
+            "description": "Capturar 201 Created. Demuestra que el estudiante inicia un intento real de examen."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Intento iniciado', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "if (data.id) { pm.collectionVariables.set('intentoId', String(data.id)); }",
+                  "pm.test('Estado INICIADO', function () { pm.expect(data.estado).to.eql('INICIADO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.9 ESTUDIANTE finaliza examen y registra calificacion",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{estudianteToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"puntajeObtenido\": {{puntajeObtenido}},\n  \"respuestas\": [\n    { \"pregunta\": \"Arquitectura cloud native\", \"respuesta\": \"API Gateway, BFF, RabbitMQ y S3\" },\n    { \"pregunta\": \"Seguridad\", \"respuesta\": \"JWT emitido por Azure AD B2C\" }\n  ],\n  \"comentario\": \"Examen realizado por estudiante y calificacion registrada automaticamente.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{ec2Url}}/intentos/{{intentoId}}/finalizar",
+            "description": "Capturar 200 OK. Demuestra envio de respuestas, cierre del intento y registro automatico de calificacion."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Intento finalizado', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Estado FINALIZADO', function () { pm.expect(data.estado).to.eql('FINALIZADO'); });",
+                  "pm.test('Calificacion generada', function () { pm.expect(data.calificacionId).to.exist; });",
+                  "if (data.calificacionId) { pm.collectionVariables.set('calificacionId', String(data.calificacionId)); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.10 Listar intentos por inscripcion",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{estudianteToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{ec2Url}}/inscripciones/{{inscripcionId}}/intentos",
+            "description": "Capturar 200 OK. Demuestra trazabilidad del intento realizado por el estudiante."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Lista intentos', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.test('Existe al menos un intento', function () { pm.expect(data.length).to.be.above(0); });"
                 ]
               }
             }
@@ -642,7 +787,7 @@
             },
             "method": "GET",
             "header": [],
-            "url": "{{apiGatewayUrl}}/calificaciones?inscripcionId={{numeroResumen}}",
+            "url": "{{apiGatewayUrl}}/calificaciones?inscripcionId={{inscripcionId}}",
             "description": "Capturar ruta nueva de calificaciones funcionando por API Gateway."
           },
           "event": [
@@ -652,6 +797,80 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('API Gateway calificaciones 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.5 API Gateway iniciar intento con token debe responder 201",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{estudianteToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inscripcionId\": {{inscripcionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{apiGatewayUrl}}/examenes/{{examenId}}/intentos",
+            "description": "Capturar ruta de intento de examen publicada en API Gateway."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('API Gateway intento 201', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.6 API Gateway listar intentos con token debe responder 200",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{estudianteToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{apiGatewayUrl}}/inscripciones/{{inscripcionId}}/intentos",
+            "description": "Capturar consulta de intentos publicada por API Gateway."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('API Gateway intentos 200', function () { pm.response.to.have.status(200); });"
                 ]
               }
             }

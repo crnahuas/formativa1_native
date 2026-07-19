@@ -7,6 +7,9 @@ linea. La solucion permite administrar cursos, registrar inscripciones de
 estudiantes, generar resumenes de inscripcion, publicar y consumir mensajes en
 RabbitMQ, almacenar archivos en AWS S3 y proteger los endpoints mediante JWT
 emitidos por Azure AD B2C.
+Ademas, permite que un estudiante inicie y finalice un intento de examen,
+registre respuestas y genere automaticamente una calificacion asociada a la
+inscripcion.
 
 La aplicacion esta compuesta por un backend desarrollado en Spring Boot, un
 frontend HTML separado para la demostracion, una cola RabbitMQ ejecutada en
@@ -21,7 +24,7 @@ La arquitectura de la solucion se organiza en los siguientes componentes:
 | Componente | Funcion |
 | --- | --- |
 | Frontend | Cliente web para ejecutar el flujo funcional con JWT. |
-| Backend Spring Boot | Expone APIs REST para cursos, contenidos, examenes, calificaciones, inscripciones, resumenes, RabbitMQ y S3. |
+| Backend Spring Boot | Expone APIs REST para cursos, contenidos, examenes, intentos, calificaciones, inscripciones, resumenes, RabbitMQ y S3. |
 | Azure AD B2C | Servicio IDaaS encargado de emitir los tokens JWT. |
 | AWS API Gateway | API Manager para publicar y administrar los endpoints. |
 | RabbitMQ | Servicio de colas para procesar resumenes de inscripcion. |
@@ -34,7 +37,7 @@ La arquitectura de la solucion se organiza en los siguientes componentes:
 
 | Criterio de evaluacion | Cumplimiento en el proyecto | Evidencia asociada |
 | --- | --- | --- |
-| Microservicios backend en Spring Boot | Backend Spring Boot con APIs REST para cursos, contenidos, examenes, calificaciones, inscripciones, resumenes, RabbitMQ y S3. El backend opera como BFF/orquestador y se despliega separado del frontend y RabbitMQ. | Codigo fuente, Postman, respuestas JSON. |
+| Microservicios backend en Spring Boot | Backend Spring Boot con APIs REST para cursos, contenidos, examenes, intentos, calificaciones, inscripciones, resumenes, RabbitMQ y S3. El backend opera como BFF/orquestador y se despliega separado del frontend y RabbitMQ. | Codigo fuente, Postman, respuestas JSON. |
 | IDaaS para autenticacion y autorizacion | Azure AD B2C emite JWT y Spring Security valida el token en todos los endpoints. El backend tambien soporta roles `ESTUDIANTE` e `INSTRUCTOR` mediante claims JWT si se activa `APP_SECURITY_ROLES_ENABLED=true`. | Token JWT, `401` sin token, `403` por rol insuficiente, `200` con token, secret `AZURE_B2C_ISSUER_URI`. |
 | RabbitMQ en Docker | RabbitMQ se ejecuta como contenedor `formativa-rabbitmq` y la app usa productor y consumidor. | Consola RabbitMQ, cola, exchange, productor y consumidor. |
 | API Manager | AWS API Gateway publica las rutas del backend hacia EC2. | Captura de API Gateway con rutas e integracion HTTP. |
@@ -51,6 +54,7 @@ el alcance implementado se concentra en el flujo backend evaluable:
 - Administracion basica de cursos.
 - Publicacion y consulta de contenidos de curso.
 - Registro y consulta de examenes.
+- Inicio y finalizacion de intentos de examen por estudiante.
 - Registro y consulta de calificaciones.
 - Inscripcion de estudiantes en cursos.
 - Generacion de resumen de inscripcion.
@@ -71,6 +75,9 @@ calificaciones, RabbitMQ y escrituras S3; `ESTUDIANTE` o `INSTRUCTOR` para
 consultas, inscripciones, resumenes y descargas. Para evidenciar este punto se
 debe emitir el claim `roles`, `role`, `extension_Rol` o `extension_role` desde
 Azure AD B2C con los valores `ESTUDIANTE` e `INSTRUCTOR`.
+El frontend incorpora login con MSAL Browser para iniciar sesion contra Azure AD
+B2C y cargar el token automaticamente. El campo de JWT se mantiene como respaldo
+para pruebas academicas o Postman.
 
 ## 5. Microservicio backend
 
@@ -87,6 +94,9 @@ Endpoints principales:
 | POST | `/cursos/{cursoId}/contenidos` | Registra contenido o material de estudio para un curso. |
 | GET | `/cursos/{cursoId}/examenes` | Lista examenes disponibles para un curso. |
 | POST | `/cursos/{cursoId}/examenes` | Registra un examen asociado a un curso. |
+| POST | `/examenes/{examenId}/intentos` | Inicia un intento de examen para una inscripcion. |
+| POST | `/intentos/{intentoId}/finalizar` | Finaliza el intento, guarda respuestas y genera calificacion. |
+| GET | `/inscripciones/{inscripcionId}/intentos` | Lista intentos realizados por una inscripcion. |
 | POST | `/inscripciones` | Registra una inscripcion de estudiante. |
 | GET | `/calificaciones?inscripcionId=1` | Lista calificaciones de una inscripcion. |
 | POST | `/calificaciones` | Registra una calificacion de examen. |
@@ -114,7 +124,9 @@ Configuracion aplicada:
 5. Guardar el valor en el secret `AZURE_B2C_ISSUER_URI`.
 6. Configurar Spring Boot como OAuth2 Resource Server.
 7. Enviar el token en Postman o frontend usando `Authorization: Bearer`.
-8. Para roles, agregar un claim de aplicacion o atributo personalizado con
+8. Para frontend, configurar MSAL Browser con client id y authority de Azure AD
+   B2C.
+9. Para roles, agregar un claim de aplicacion o atributo personalizado con
    `ESTUDIANTE` o `INSTRUCTOR` y activar `APP_SECURITY_ROLES_ENABLED=true`.
 
 Para demostrar la seguridad se consideran tres pruebas:
@@ -135,7 +147,7 @@ Configuracion aplicada:
 1. Crear una API HTTP en AWS API Gateway.
 2. Crear integraciones HTTP apuntando al backend en EC2, por ejemplo
    `http://IP_PUBLICA_EC2:8080/cursos`.
-3. Registrar las rutas de cursos, contenidos, examenes, calificaciones,
+3. Registrar las rutas de cursos, contenidos, examenes, intentos, calificaciones,
    inscripciones, RabbitMQ y S3.
 4. Asociar cada ruta al metodo HTTP correspondiente.
 5. Configurar el autorizador JWT con el issuer de Azure AD B2C.
@@ -233,6 +245,7 @@ Tablas principales:
 | `RESUMENES_INSCRIPCION_MQ` | Mensajes consumidos desde RabbitMQ. |
 | `CONTENIDOS_CURSO` | Contenidos y materiales asociados a cursos. |
 | `EXAMENES` | Examenes definidos para cada curso. |
+| `INTENTOS_EXAMEN` | Intentos iniciados y finalizados por estudiantes. |
 | `CALIFICACIONES` | Calificaciones registradas para inscripciones y examenes. |
 
 El script base se encuentra en `docs/oracle_schema.sql`.
@@ -249,9 +262,11 @@ En EC2 queda disponible en:
 http://IP_PUBLICA_EC2:3000
 ```
 
-El frontend permite ingresar la URL del backend, pegar el JWT de Azure AD B2C y
-ejecutar el flujo de prueba: listar cursos, crear curso, crear inscripcion,
-generar resumen, producir/consumir RabbitMQ y probar S3.
+El frontend permite ingresar la URL del backend, iniciar sesion con Azure AD B2C
+mediante MSAL Browser, cargar el JWT automaticamente y ejecutar el flujo de
+prueba: listar cursos, crear curso, crear inscripcion, iniciar/finalizar examen,
+generar resumen, producir/consumir RabbitMQ y probar S3. El campo manual de JWT
+queda disponible solo como respaldo para pruebas controladas.
 
 ## 12. CI/CD y despliegue
 
@@ -298,7 +313,7 @@ mvn test
 Resultado esperado:
 
 ```text
-Tests run: 17, Failures: 0, Errors: 0
+Tests run: 20, Failures: 0, Errors: 0
 ```
 
 ## 14. Entregables
