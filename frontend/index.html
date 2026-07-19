@@ -6,14 +6,22 @@
   <title>CDY2204 EFT</title>
   <style>
     :root {
-      --bg: #f4f6fa;
+      --bg: #eef2f7;
       --panel: #ffffff;
-      --line: #d7dee8;
-      --text: #162033;
-      --muted: #5e687a;
-      --primary: #166b7f;
-      --primary-dark: #104f60;
-      --danger: #9f2d2d;
+      --panel-soft: #f8fafc;
+      --line: #d6dee9;
+      --line-strong: #b9c5d4;
+      --text: #172033;
+      --muted: #647084;
+      --primary: #12606f;
+      --primary-dark: #0d4a56;
+      --accent: #256e5e;
+      --danger: #b42318;
+      --warning: #995d00;
+      --ok: #16794c;
+      --console: #0f172a;
+      --console-text: #d8f99c;
+      --shadow: 0 18px 45px rgba(23, 32, 51, 0.10);
     }
 
     * {
@@ -27,39 +35,17 @@
       color: var(--text);
     }
 
-    main {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-end;
-      margin-bottom: 18px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 28px;
-    }
-
-    h2 {
-      margin: 0 0 12px;
-      font-size: 18px;
-    }
-
+    h1,
+    h2,
+    h3,
     p {
-      margin: 6px 0 0;
-      color: var(--muted);
+      margin: 0;
     }
 
     label {
       display: block;
       margin: 10px 0 6px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--muted);
     }
@@ -68,41 +54,62 @@
     textarea {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 10px;
+      border-radius: 7px;
+      padding: 10px 11px;
       font: inherit;
       background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(18, 96, 111, 0.12);
     }
 
     textarea {
-      min-height: 88px;
+      min-height: 92px;
       resize: vertical;
+      line-height: 1.35;
     }
 
     button {
+      min-height: 38px;
       border: 0;
-      border-radius: 6px;
-      padding: 10px 12px;
+      border-radius: 7px;
+      padding: 9px 12px;
       background: var(--primary);
       color: #fff;
       font-weight: 700;
       cursor: pointer;
+      transition: background .15s ease, transform .15s ease;
     }
 
     button:hover {
       background: var(--primary-dark);
     }
 
-    button.secondary {
-      background: #485466;
+    button:active {
+      transform: translateY(1px);
     }
 
-    section,
-    .login-panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 16px;
+    button.secondary {
+      background: #4b5567;
+    }
+
+    button.ghost {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--text);
+    }
+
+    button.ghost:hover {
+      background: var(--panel-soft);
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .login-shell {
@@ -113,78 +120,260 @@
     }
 
     .login-panel {
-      width: min(720px, 100%);
+      width: min(760px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .login-brand {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 390px;
+      padding: 26px;
+      background: #102836;
+      color: #fff;
+    }
+
+    .login-brand p {
+      margin-top: 8px;
+      color: #bfd0d7;
+      line-height: 1.45;
+    }
+
+    .login-badge {
+      width: fit-content;
+      border: 1px solid rgba(255, 255, 255, .22);
+      border-radius: 999px;
+      padding: 7px 10px;
+      color: #d9f99d;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .login-form {
+      padding: 26px;
+      align-self: center;
+    }
+
+    .login-form h2 {
+      font-size: 20px;
+    }
+
+    .login-form p {
+      margin-top: 7px;
+      color: var(--muted);
+      line-height: 1.45;
     }
 
     .login-actions {
       display: flex;
       gap: 8px;
       justify-content: flex-end;
-      margin-top: 12px;
+      margin-top: 14px;
+    }
+
+    .error {
+      margin-top: 10px;
+      color: var(--danger);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .app-shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .app-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .title-block h1 {
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .title-block p {
+      margin-top: 5px;
+      color: var(--muted);
+    }
+
+    .session-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .status {
-      min-width: 120px;
-      padding: 8px 10px;
+      min-width: 124px;
+      padding: 9px 11px;
       border: 1px solid var(--line);
-      border-radius: 6px;
+      border-radius: 7px;
       background: var(--panel);
       text-align: center;
       font-weight: 700;
       color: var(--muted);
     }
 
-    .grid {
+    .status.error {
+      color: var(--danger);
+      border-color: #f3b5ae;
+      background: #fff5f3;
+    }
+
+    .layout {
       display: grid;
-      grid-template-columns: minmax(300px, 380px) 1fr;
-      gap: 16px;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 14px;
       align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: 0 8px 24px rgba(23, 32, 51, 0.05);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h2 {
+      font-size: 16px;
+    }
+
+    .panel-body {
+      padding: 14px 16px 16px;
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 10px;
+    }
+
+    .span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .token-preview {
+      min-height: 70px;
+      max-height: 120px;
+      font: 12px Menlo, Consolas, monospace;
+      color: #334155;
+    }
+
+    .workspace {
+      display: grid;
+      gap: 14px;
+    }
+
+    .action-group {
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .action-group:first-child {
+      border-top: 0;
+    }
+
+    .action-group h3 {
+      margin-bottom: 9px;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
     }
 
     .actions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
-      margin-top: 12px;
+    }
+
+    .console-card {
+      overflow: hidden;
+    }
+
+    .console-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      background: #111827;
+      color: #cbd5e1;
+    }
+
+    .console-toolbar h2 {
+      font-size: 14px;
+      color: #f8fafc;
     }
 
     pre {
-      min-height: 520px;
+      min-height: 430px;
       margin: 0;
       padding: 14px;
       overflow: auto;
       white-space: pre-wrap;
-      border-radius: 8px;
-      background: #111827;
-      color: #d9f99d;
+      background: var(--console);
+      color: var(--console-text);
       font: 13px Menlo, Consolas, monospace;
     }
 
-    .error {
-      color: var(--danger);
+    pre.error {
+      color: #fecaca;
     }
 
-    .hidden {
-      display: none;
+    @media (max-width: 980px) {
+      .layout,
+      .app-header,
+      .login-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .login-brand {
+        min-height: auto;
+        gap: 60px;
+      }
+
+      .actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
-    @media (max-width: 860px) {
-      main {
-        padding: 16px;
+    @media (max-width: 620px) {
+      .app-shell,
+      .login-shell {
+        padding: 14px;
       }
 
-      header,
-      .grid {
-        display: block;
+      .session-bar,
+      .login-actions {
+        display: grid;
+        grid-template-columns: 1fr;
       }
 
-      .status {
-        margin-top: 12px;
-        text-align: left;
-      }
-
-      section + section {
-        margin-top: 16px;
+      .fields-grid,
+      .actions {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -192,86 +381,151 @@
 <body>
   <div id="loginView" class="login-shell">
     <section class="login-panel">
-      <h1>CDY2204 EFT</h1>
-      <p>Ingreso academico con JWT emitido por Azure AD B2C.</p>
-      <label for="loginToken">JWT Azure AD B2C</label>
-      <textarea id="loginToken" placeholder="Pegar token sin Bearer"></textarea>
-      <div class="login-actions">
-        <button onclick="ingresar()">Ingresar</button>
+      <div class="login-brand">
+        <div>
+          <div class="login-badge">Azure AD B2C JWT</div>
+          <h1 style="margin-top:18px;">CDY2204 EFT</h1>
+          <p>Cliente de validación para backend, roles, exámenes, RabbitMQ y S3.</p>
+        </div>
+        <p>El backend valida el token y aplica permisos por rol.</p>
       </div>
-      <p id="loginError" class="error"></p>
+      <div class="login-form">
+        <h2>Ingreso</h2>
+        <p>Usa el token emitido por el flujo de usuario de Azure AD B2C.</p>
+        <label for="loginToken">JWT Azure AD B2C</label>
+        <textarea id="loginToken" placeholder="Pegar token sin Bearer"></textarea>
+        <div class="login-actions">
+          <button onclick="ingresar()">Ingresar</button>
+        </div>
+        <p id="loginError" class="error"></p>
+      </div>
     </section>
   </div>
 
-  <main id="appView" class="hidden">
-    <header>
-      <div>
+  <main id="appView" class="app-shell hidden">
+    <header class="app-header">
+      <div class="title-block">
         <h1>CDY2204 EFT</h1>
-        <p>Cliente frontend para probar backend, IDaaS, RabbitMQ, S3 y examenes.</p>
+        <p>Pruebas funcionales de backend, IDaaS, exámenes, RabbitMQ y S3.</p>
       </div>
-      <div>
+      <div class="session-bar">
         <div id="status" class="status">Autenticado</div>
-        <button class="secondary" style="margin-top:8px;width:100%;" onclick="cerrarSesion()">Cerrar sesion</button>
+        <button class="ghost" onclick="cerrarSesion()">Cerrar sesion</button>
       </div>
     </header>
 
-    <div class="grid">
-      <section>
-        <h2>Conexion</h2>
-        <label for="baseUrl">URL backend</label>
-        <input id="baseUrl" autocomplete="off">
-        <label for="token">JWT activo</label>
-        <textarea id="token"></textarea>
+    <div class="layout">
+      <aside class="panel">
+        <div class="panel-header">
+          <h2>Configuración</h2>
+        </div>
+        <div class="panel-body">
+          <label for="baseUrl">URL backend</label>
+          <input id="baseUrl" autocomplete="off">
+          <label for="token">JWT activo</label>
+          <textarea id="token" class="token-preview"></textarea>
+        </div>
 
-        <h2 style="margin-top: 18px;">Datos</h2>
-        <label for="cursoNombre">Curso</label>
-        <input id="cursoNombre" value="EFT Cloud Native Spring Boot">
-        <label for="instructor">Instructor</label>
-        <input id="instructor" value="Docente CDY2204">
-        <label for="duracion">Duracion</label>
-        <input id="duracion" value="24 horas">
-        <label for="costo">Costo</label>
-        <input id="costo" type="number" value="120000">
-        <label for="estudianteNombre">Estudiante</label>
-        <input id="estudianteNombre" value="Maria Perez">
-        <label for="estudianteEmail">Email</label>
-        <input id="estudianteEmail" value="maria.perez@duocuc.cl">
-        <label for="cursoId">Curso ID</label>
-        <input id="cursoId" type="number" value="1">
-        <label for="numeroResumen">Numero resumen</label>
-        <input id="numeroResumen" type="number" value="1">
-        <label for="examenId">Examen ID</label>
-        <input id="examenId" type="number" value="1">
-        <label for="intentoId">Intento ID</label>
-        <input id="intentoId" type="number" value="1">
-        <label for="puntajeObtenido">Puntaje obtenido</label>
-        <input id="puntajeObtenido" type="number" value="92">
-        <label for="respuestas">Respuestas examen JSON</label>
-        <textarea id="respuestas">[
+        <div class="panel-header">
+          <h2>Datos de prueba</h2>
+        </div>
+        <div class="panel-body fields-grid">
+          <div class="span-2">
+            <label for="cursoNombre">Curso</label>
+            <input id="cursoNombre" value="EFT Cloud Native Spring Boot">
+          </div>
+          <div class="span-2">
+            <label for="instructor">Instructor</label>
+            <input id="instructor" value="Docente CDY2204">
+          </div>
+          <div>
+            <label for="duracion">Duración</label>
+            <input id="duracion" value="24 horas">
+          </div>
+          <div>
+            <label for="costo">Costo</label>
+            <input id="costo" type="number" value="120000">
+          </div>
+          <div>
+            <label for="estudianteNombre">Estudiante</label>
+            <input id="estudianteNombre" value="Maria Perez">
+          </div>
+          <div>
+            <label for="estudianteEmail">Email</label>
+            <input id="estudianteEmail" value="maria.perez@duocuc.cl">
+          </div>
+          <div>
+            <label for="cursoId">Curso ID</label>
+            <input id="cursoId" type="number" value="1">
+          </div>
+          <div>
+            <label for="numeroResumen">Resumen</label>
+            <input id="numeroResumen" type="number" value="1">
+          </div>
+          <div>
+            <label for="examenId">Examen ID</label>
+            <input id="examenId" type="number" value="1">
+          </div>
+          <div>
+            <label for="intentoId">Intento ID</label>
+            <input id="intentoId" type="number" value="1">
+          </div>
+          <div class="span-2">
+            <label for="puntajeObtenido">Puntaje obtenido</label>
+            <input id="puntajeObtenido" type="number" value="92">
+          </div>
+          <div class="span-2">
+            <label for="respuestas">Respuestas examen JSON</label>
+            <textarea id="respuestas">[
   { "pregunta": "Arquitectura cloud native", "respuesta": "API Gateway, BFF, RabbitMQ y S3" },
   { "pregunta": "Seguridad", "respuesta": "JWT emitido por Azure AD B2C" }
 ]</textarea>
-      </section>
-
-      <section>
-        <h2>Flujo</h2>
-        <div class="actions">
-          <button onclick="listarCursos()">Listar cursos</button>
-          <button onclick="crearCurso()">Crear curso</button>
-          <button onclick="crearInscripcion()">Crear inscripcion</button>
-          <button onclick="generarResumen()">Generar resumen</button>
-          <button onclick="iniciarIntento()">Iniciar examen</button>
-          <button onclick="finalizarIntento()">Finalizar examen</button>
-          <button onclick="producirRabbit()">Producir RabbitMQ</button>
-          <button onclick="consumirRabbit()">Consumir RabbitMQ</button>
-          <button onclick="subirS3()">Subir S3</button>
-          <button onclick="descargarS3()">Descargar S3</button>
-          <button class="secondary" onclick="probarSinToken()">Probar 401</button>
-          <button class="secondary" onclick="limpiar()">Limpiar</button>
+          </div>
         </div>
-        <label>Respuesta</label>
-        <pre id="output">Listo para probar.</pre>
-      </section>
+      </aside>
+
+      <div class="workspace">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Flujo de pruebas</h2>
+            <button class="ghost" onclick="limpiar()">Limpiar</button>
+          </div>
+          <div class="action-group">
+            <h3>Seguridad y cursos</h3>
+            <div class="actions">
+              <button onclick="listarCursos()">Listar cursos</button>
+              <button onclick="crearCurso()">Crear curso</button>
+              <button class="secondary" onclick="probarSinToken()">Probar 401</button>
+            </div>
+          </div>
+          <div class="action-group">
+            <h3>Inscripción y examen</h3>
+            <div class="actions">
+              <button onclick="crearInscripcion()">Crear inscripción</button>
+              <button onclick="iniciarIntento()">Iniciar examen</button>
+              <button onclick="finalizarIntento()">Finalizar examen</button>
+            </div>
+          </div>
+          <div class="action-group">
+            <h3>Resumen, mensajería y almacenamiento</h3>
+            <div class="actions">
+              <button onclick="generarResumen()">Generar resumen</button>
+              <button onclick="producirRabbit()">Producir RabbitMQ</button>
+              <button onclick="consumirRabbit()">Consumir RabbitMQ</button>
+              <button onclick="subirS3()">Subir S3</button>
+              <button onclick="descargarS3()">Descargar S3</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel console-card">
+          <div class="console-toolbar">
+            <h2>Respuesta</h2>
+            <span id="requestLabel">Listo</span>
+          </div>
+          <pre id="output">Listo para probar.</pre>
+        </section>
+      </div>
     </div>
   </main>
 
@@ -280,6 +534,7 @@
     const appView = document.getElementById('appView');
     const output = document.getElementById('output');
     const statusBox = document.getElementById('status');
+    const requestLabel = document.getElementById('requestLabel');
     const defaultBackend = location.hostname && location.hostname !== '127.0.0.1'
       ? `${location.protocol}//${location.hostname}:8080`
       : 'http://localhost:8080';
@@ -322,7 +577,9 @@
       appView.classList.remove('hidden');
       statusBox.textContent = 'Autenticado';
       statusBox.classList.remove('error');
-      output.textContent = 'Sesion iniciada con JWT Azure AD B2C.';
+      requestLabel.textContent = 'Sesión';
+      output.classList.remove('error');
+      output.textContent = 'Sesión iniciada con JWT Azure AD B2C.';
     }
 
     function cerrarSesion() {
@@ -341,7 +598,7 @@
       try {
         return JSON.parse(value(id));
       } catch (error) {
-        throw new Error(`El campo ${id} no contiene JSON valido.`);
+        throw new Error(`El campo ${id} no contiene JSON válido.`);
       }
     }
 
@@ -365,6 +622,7 @@
     async function call(path, options = {}) {
       const base = value('baseUrl').replace(/\/$/, '');
       const method = options.method || 'GET';
+      requestLabel.textContent = `${method} ${path}`;
       try {
         const response = await fetch(`${base}${path}`, options);
         const text = await response.text();
@@ -459,6 +717,7 @@
         respuestas = parseJsonField('respuestas');
       } catch (error) {
         output.classList.add('error');
+        requestLabel.textContent = 'JSON inválido';
         output.textContent = error.message;
         return Promise.resolve();
       }
@@ -503,6 +762,7 @@
     function limpiar() {
       statusBox.textContent = 'Autenticado';
       statusBox.classList.remove('error');
+      requestLabel.textContent = 'Listo';
       output.classList.remove('error');
       output.textContent = 'Listo para probar.';
     }
