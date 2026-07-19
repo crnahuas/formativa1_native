@@ -302,6 +302,13 @@
       letter-spacing: .04em;
     }
 
+    .flow-note {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
     .actions {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -459,6 +466,10 @@
             <input id="cursoId" type="number" value="1">
           </div>
           <div>
+            <label for="contenidoId">Contenido ID</label>
+            <input id="contenidoId" type="number" value="1">
+          </div>
+          <div>
             <label for="numeroResumen">Resumen</label>
             <input id="numeroResumen" type="number" value="1">
           </div>
@@ -492,6 +503,7 @@
           </div>
           <div class="action-group">
             <h3>Seguridad y cursos</h3>
+            <p class="flow-note">Comienza listando o creando un curso. Al crear curso, el Curso ID se actualiza automáticamente.</p>
             <div class="actions">
               <button onclick="listarCursos()">Listar cursos</button>
               <button onclick="crearCurso()">Crear curso</button>
@@ -499,15 +511,29 @@
             </div>
           </div>
           <div class="action-group">
-            <h3>Inscripción y examen</h3>
+            <h3>Contenido y evaluación</h3>
+            <p class="flow-note">Crea contenido y examen para el Curso ID actual antes de iniciar un intento.</p>
+            <div class="actions">
+              <button onclick="crearContenido()">Crear contenido</button>
+              <button onclick="listarContenidos()">Listar contenidos</button>
+              <button onclick="crearExamen()">Crear examen</button>
+              <button onclick="listarExamenes()">Listar exámenes</button>
+            </div>
+          </div>
+          <div class="action-group">
+            <h3>Inscripción y examen del estudiante</h3>
+            <p class="flow-note">Crea la inscripción, inicia el examen con el Examen ID y finalízalo para generar calificación.</p>
             <div class="actions">
               <button onclick="crearInscripcion()">Crear inscripción</button>
               <button onclick="iniciarIntento()">Iniciar examen</button>
               <button onclick="finalizarIntento()">Finalizar examen</button>
+              <button onclick="listarIntentos()">Listar intentos</button>
+              <button onclick="listarCalificaciones()">Listar calificaciones</button>
             </div>
           </div>
           <div class="action-group">
             <h3>Resumen, mensajería y almacenamiento</h3>
+            <p class="flow-note">Después de crear la inscripción, genera el resumen antes de enviarlo a RabbitMQ o S3.</p>
             <div class="actions">
               <button onclick="generarResumen()">Generar resumen</button>
               <button onclick="producirRabbit()">Producir RabbitMQ</button>
@@ -594,6 +620,18 @@
       return encodeURIComponent(value('numeroResumen'));
     }
 
+    function cursoId() {
+      return encodeURIComponent(value('cursoId'));
+    }
+
+    function examenId() {
+      return encodeURIComponent(value('examenId'));
+    }
+
+    function intentoId() {
+      return encodeURIComponent(value('intentoId'));
+    }
+
     function parseJsonField(id) {
       try {
         return JSON.parse(value(id));
@@ -650,6 +688,12 @@
       }
       try {
         const data = JSON.parse(text);
+        if (data.id && path === '/cursos') {
+          setValue('cursoId', String(data.id));
+        }
+        if (data.id && path.includes('/contenidos')) {
+          setValue('contenidoId', String(data.id));
+        }
         if (data.id && path.includes('/examenes') && !path.includes('/intentos')) {
           setValue('examenId', String(data.id));
         }
@@ -658,6 +702,9 @@
         }
         if (data.inscripcionId) {
           setValue('numeroResumen', String(data.inscripcionId));
+        }
+        if (data.calificacionId) {
+          requestLabel.textContent = `${requestLabel.textContent} · calificación ${data.calificacionId}`;
         }
       } catch (error) {
         // La respuesta puede ser texto plano, por ejemplo el resumen descargado.
@@ -697,12 +744,49 @@
       });
     }
 
+    function crearContenido() {
+      return call(`/cursos/${cursoId()}/contenidos`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          titulo: 'Material introductorio Cloud Native',
+          descripcion: 'Contenido base para revisar arquitectura cloud native, API Gateway, seguridad JWT, RabbitMQ y S3.',
+          urlContenido: 'https://example.com/contenidos/cloud-native-introduccion'
+        })
+      });
+    }
+
+    function listarContenidos() {
+      return call(`/cursos/${cursoId()}/contenidos`, {
+        headers: authHeaders(false)
+      });
+    }
+
+    function crearExamen() {
+      return call(`/cursos/${cursoId()}/examenes`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          titulo: 'Evaluación Cloud Native',
+          descripcion: 'Examen de validación de integraciones cloud native.',
+          fechaDisponible: new Date(Date.now() + 3600000).toISOString().replace('Z', ''),
+          puntajeMaximo: 100
+        })
+      });
+    }
+
+    function listarExamenes() {
+      return call(`/cursos/${cursoId()}/examenes`, {
+        headers: authHeaders(false)
+      });
+    }
+
     function generarResumen() {
       return call(`/inscripciones/${resumenId()}/resumen`, { headers: authHeaders(false) });
     }
 
     function iniciarIntento() {
-      return call(`/examenes/${encodeURIComponent(value('examenId'))}/intentos`, {
+      return call(`/examenes/${examenId()}/intentos`, {
         method: 'POST',
         headers: authHeaders(true),
         body: JSON.stringify({
@@ -721,7 +805,7 @@
         output.textContent = error.message;
         return Promise.resolve();
       }
-      return call(`/intentos/${encodeURIComponent(value('intentoId'))}/finalizar`, {
+      return call(`/intentos/${intentoId()}/finalizar`, {
         method: 'POST',
         headers: authHeaders(true),
         body: JSON.stringify({
@@ -729,6 +813,18 @@
           respuestas,
           comentario: 'Examen realizado desde frontend con JWT Azure AD B2C.'
         })
+      });
+    }
+
+    function listarIntentos() {
+      return call(`/inscripciones/${resumenId()}/intentos`, {
+        headers: authHeaders(false)
+      });
+    }
+
+    function listarCalificaciones() {
+      return call(`/calificaciones?inscripcionId=${resumenId()}`, {
+        headers: authHeaders(false)
       });
     }
 
